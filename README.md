@@ -1,6 +1,7 @@
 # 🚀 Hackathon 2026
 
 ## 🌿 Git ветки
+
 - main — стабильная версия
 - dev — основная ветка для разработки
 
@@ -91,20 +92,20 @@ git push
 ## 🚀 Для начала работы
 
 1. Клонируем репозиторий
-git clone https://github.com/Fedor272901/Hackaton_2026.git
-cd Hackaton_2026
+   git clone https://github.com/Fedor272901/Hackaton_2026.git
+   cd Hackaton_2026
 
 ---
 
 2. Переходим в рабочую ветку
-git checkout dev
-git pull
+   git checkout dev
+   git pull
 
 ---
 
 3. Создаем свою ветку
-git checkout -b feature/name
-name — краткое название задачи (например: login, ui, api)
+   git checkout -b feature/name
+   name — краткое название задачи (например: login, ui, api)
 
 ---
 
@@ -115,21 +116,26 @@ name — краткое название задачи (например: login, 
 Содержимое .gitignore:
 
 # IDE
+
 .vscode/
 
 # Node
+
 node_modules/
 
 # Python
-__pycache__/
-*.pyc
+
+**pycache**/
+\*.pyc
 venv/
 
 # Env
+
 .env
 
 # Logs
-*.log
+
+\*.log
 
 ---
 
@@ -160,12 +166,12 @@ pip install -r requirements.txt
 Если установили новую библиотеку:
 
 1. Установить библиотеку:
-pip install <название>
+   pip install <название>
 
 2. Обновить файл зависимостей:
-pip freeze > requirements.txt
+   pip freeze > requirements.txt
 
 3. Закоммитить изменения и запушить:
-git add requirements.txt
-git commit -m "обновление библиотек"
-git push  
+   git add requirements.txt
+   git commit -m "обновление библиотек"
+   git push
