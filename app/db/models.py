@@ -33,7 +33,14 @@ class User(Base):
     # связи
     requests = relationship("Request", back_populates="user")
     messages = relationship("Message", back_populates="user")
-    role_requests = relationship("RoleRequest", back_populates="user")
+
+    role_requests = relationship(
+        "RoleRequest", foreign_keys="[RoleRequest.user_id]", back_populates="user"
+    )
+
+    processed_role_requests = relationship(
+        "RoleRequest", foreign_keys="[RoleRequest.processed_by_admin_id]"
+    )
 
 
 # ---------------------
