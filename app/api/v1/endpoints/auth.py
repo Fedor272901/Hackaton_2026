@@ -4,8 +4,9 @@ from typing import Annotated
 
 from app.db.database import get_db
 from app.schemas.user import UserCreate, UserRead, UserLogin
+from app.schemas.token import Token
 from app.crud.user import create_user, get_user_by_email
-from app.core.security import verify_password
+from app.core.security import verify_password, create_access_token
 
 router = APIRouter()
 
@@ -37,7 +38,7 @@ def register(
     return new_user
 
 
-@router.post("/login", response_model=UserRead)
+@router.post("/login", response_model=Token)
 def login(
     user_data: UserLogin,
     db: Session = Depends(get_db),
@@ -52,5 +53,8 @@ def login(
     if not verify_password(user_data.password, user.password_hash):
         raise HTTPException(status_code=400, detail="Invalid email or password")
 
+    # 3. создаем токен
+    access_token = create_access_token(data={"sub": user.email})
+
     # 3. возвращаем пользователя
-    return user
+    return {"access_token": access_token, "token_type": "bearer"}
