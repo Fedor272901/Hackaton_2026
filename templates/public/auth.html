@@ -1,0 +1,251 @@
+<!--Landing / Главная Промо-страница с авторизацией: описание сервиса, кнопки «Войти» / «Регистрация», ссылки на разделы.-->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Авторизация гражданина в портале подачи обращений к местным депутатам.">
+  <title>Портал обращений депутатам — Авторизация</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-page">
+  <!-- CSS-only переключение между входом и регистрацией -->
+  <input class="state-toggle" type="radio" name="auth-mode" id="auth-mode-login" checked>
+  <input class="state-toggle" type="radio" name="auth-mode" id="auth-mode-register">
+
+  <main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-intro-title">
+      <div class="auth-intro__backdrop"></div>
+      <div class="auth-intro__content">
+        <p class="auth-intro__eyebrow">Портал обращений к местным депутатам</p>
+        <h1 class="auth-intro__title" id="auth-intro-title">
+          Сообщайте о проблемах района и следите за решениями в одном кабинете
+        </h1>
+        <p class="auth-intro__lead">
+          Личный кабинет помогает быстро отправить обращение, узнать статус его рассмотрения и получить официальный ответ без звонков и бумажных заявлений.
+        </p>
+
+        <section class="auth-process" aria-labelledby="how-it-works-title">
+          <div class="section-card section-card--accent">
+            <p class="section-card__eyebrow">Как это работает?</p>
+            <h2 class="section-card__title" id="how-it-works-title">Путь обращения от заявки до ответа</h2>
+            <ol class="process-list">
+              <li class="process-list__item">
+                <span class="process-list__step" aria-hidden="true">01</span>
+                <div>
+                  <h3 class="process-list__title">Укажите проблему</h3>
+                  <p class="process-list__text">Опишите ситуацию, добавьте адрес и, при необходимости, фотографии.</p>
+                </div>
+              </li>
+              <li class="process-list__item">
+                <span class="process-list__step" aria-hidden="true">02</span>
+                <div>
+                  <h3 class="process-list__title">Система найдёт депутата</h3>
+                  <p class="process-list__text">После выбора адреса обращение автоматически связывается с нужным округом.</p>
+                </div>
+              </li>
+              <li class="process-list__item">
+                <span class="process-list__step" aria-hidden="true">03</span>
+                <div>
+                  <h3 class="process-list__title">Отслеживайте статус</h3>
+                  <p class="process-list__text">В кабинете видно, когда обращение принято, рассматривается или выполнено.</p>
+                </div>
+              </li>
+              <li class="process-list__item">
+                <span class="process-list__step" aria-hidden="true">04</span>
+                <div>
+                  <h3 class="process-list__title">Получите ответ</h3>
+                  <p class="process-list__text">Ответ депутата и итоговый статус сохраняются в истории обращений.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="trust-grid" aria-label="Преимущества портала">
+          <article class="trust-card">
+            <p class="trust-card__metric">24/7</p>
+            <p class="trust-card__text">Подача обращений в любое удобное время</p>
+          </article>
+          <article class="trust-card">
+            <p class="trust-card__metric">1 кабинет</p>
+            <p class="trust-card__text">История обращений, статусы и ответы в одном месте</p>
+          </article>
+          <article class="trust-card">
+            <p class="trust-card__metric">Без звонков</p>
+            <p class="trust-card__text">Весь путь обращения виден прямо на экране</p>
+          </article>
+        </section>
+      </div>
+    </section>
+
+    <section class="auth-panel" aria-labelledby="auth-panel-title">
+      <div class="auth-panel__shell">
+        <div class="auth-panel__header">
+          <p class="auth-panel__eyebrow">Вход в личный кабинет</p>
+          <h2 class="auth-panel__title" id="auth-panel-title">Войдите или зарегистрируйтесь в личный кабинет, для продолжения работы</h2>
+        </div>
+
+        <div class="auth-tabs" role="tablist" aria-label="Переключение между входом и регистрацией">
+          <label class="auth-tabs__label" for="auth-mode-login">Вход</label>
+          <label class="auth-tabs__label" for="auth-mode-register">Регистрация</label>
+        </div>
+
+        <div class="auth-forms">
+          <form class="auth-form auth-form--login" action="dashboard.html" method="get" novalidate>
+            <div class="auth-form__intro">
+              <h3 class="auth-form__title">Войти в личный кабинет</h3>
+              <p class="auth-form__subtitle">Используйте email или номер телефона, указанные при регистрации.</p>
+            </div>
+
+            <div class="form__field">
+              <label class="form__label" for="login-identity">Email или номер телефона</label>
+              <input
+                class="form__control"
+                id="login-identity"
+                name="identity"
+                type="text"
+                placeholder="name@example.ru или +7 (999) 123-45-67"
+                autocomplete="username"
+                inputmode="email"
+                required
+                pattern="(^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$)|(^\+?[0-9\s()\-]{10,18}$)">
+              <p class="form__hint">Поддерживаются email и номера в российском формате.</p>
+              <p class="form__error">Укажите корректный email или номер телефона.</p>
+            </div>
+
+            <div class="form__field">
+              <label class="form__label" for="login-password">Пароль</label>
+              <input
+                class="form__control"
+                id="login-password"
+                name="password"
+                type="password"
+                placeholder="Не менее 8 символов"
+                autocomplete="current-password"
+                minlength="8"
+                required>
+              <p class="form__error">Введите пароль длиной не менее 8 символов.</p>
+            </div>
+
+            <div class="auth-form__actions">
+              <button class="button button--primary" type="submit">Войти</button>
+            </div>
+          </form>
+
+          <form class="auth-form auth-form--register" action="dashboard.html" method="get" novalidate>
+            <div class="auth-form__intro">
+              <h3 class="auth-form__title">Создать аккаунт гражданина</h3>
+              <p class="auth-form__subtitle">После регистрации вы сможете подавать обращения и отслеживать историю их рассмотрения.</p>
+            </div>
+
+            <div class="form__grid form__grid--two">
+              <div class="form__field">
+                <label class="form__label" for="register-first-name">Имя</label>
+                <input
+                  class="form__control"
+                  id="register-first-name"
+                  name="first_name"
+                  type="text"
+                  placeholder="Анна"
+                  autocomplete="given-name"
+                  minlength="2"
+                  required
+                  pattern="[A-Za-zА-Яа-яЁё\-]{2,}">
+                <p class="form__error">Введите имя без цифр, минимум 2 символа.</p>
+              </div>
+
+              <div class="form__field">
+                <label class="form__label" for="register-last-name">Фамилия</label>
+                <input
+                  class="form__control"
+                  id="register-last-name"
+                  name="last_name"
+                  type="text"
+                  placeholder="Соколова"
+                  autocomplete="family-name"
+                  minlength="2"
+                  required
+                  pattern="[A-Za-zА-Яа-яЁё\-]{2,}">
+                <p class="form__error">Введите фамилию без цифр, минимум 2 символа.</p>
+              </div>
+            </div>
+
+            <div class="form__field">
+              <label class="form__label" for="register-email">Email</label>
+              <input
+                class="form__control"
+                id="register-email"
+                name="email"
+                type="email"
+                placeholder="citizen@example.ru"
+                autocomplete="email"
+                required>
+              <p class="form__error">Введите email в формате name@example.ru.</p>
+            </div>
+
+            <div class="form__field">
+              <label class="form__label" for="register-phone">Номер телефона</label>
+              <input
+                class="form__control"
+                id="register-phone"
+                name="phone"
+                type="tel"
+                placeholder="+7 (999) 123-45-67"
+                autocomplete="tel"
+                inputmode="tel"
+                required
+                pattern="\+?[0-9\s()\-]{10,18}">
+              <p class="form__error">Введите номер телефона в допустимом формате.</p>
+            </div>
+
+            <div class="form__grid form__grid--two">
+              <div class="form__field">
+                <label class="form__label" for="register-password">Пароль</label>
+                <input
+                  class="form__control"
+                  id="register-password"
+                  name="password"
+                  type="password"
+                  placeholder="Введите пароль"
+                  autocomplete="new-password"
+                  minlength="8"
+                  required
+                  pattern="(?=.*[A-Za-zА-Яа-яЁё])(?=.*[0-9]).{8,}">
+                <p class="form__error">Пароль должен содержать буквы, цифры и минимум 8 символов.</p>
+              </div>
+
+              <div class="form__field">
+                <label class="form__label" for="register-password-confirm">Подтверждение пароля</label>
+                <input
+                  class="form__control"
+                  id="register-password-confirm"
+                  name="password_confirm"
+                  type="password"
+                  placeholder="Повторите пароль"
+                  autocomplete="new-password"
+                  minlength="8"
+                  required>
+                <p class="form__error">Пароли должны совпадать</p>
+              </div>
+            </div>
+
+            <div class="form__field form__field--checkbox">
+              <label class="checkbox">
+                <input class="checkbox__control" type="checkbox" name="consent" required>
+                <span class="checkbox__box" aria-hidden="true"></span>
+                <span class="checkbox__label">Я согласен с обработкой персональных данных</span>
+              </label>
+              <p class="form__error">Необходимо подтвердить согласие на обработку персональных данных.</p>
+            </div>
+
+            <div class="auth-form__actions">
+              <button class="button button--primary" type="submit">Зарегистрироваться</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
