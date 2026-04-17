@@ -1,2 +1,180 @@
-<!--Deputy Dashboard
-Кабинет депутата: таблица обращений только по его district_id, фильтры (категория/статус/дата, сохраняются в URL), виджет мини-статистики, быстрые переходы к деталям.-->
+{% extends "base.html" %}
+
+{% block title %}Кабинет депутата — Обращения{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Кабинет депутата</h1>
+  <p class="page-header__subtitle">Управляйте обращениями граждан вашего округа</p>
+</div>
+
+<!-- Виджет статистики -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card__label">Всего обращений</div>
+    <div class="stat-card__value">{{ stats.total }}</div>
+    <div class="stat-card__trend stat-card__trend--up">↑ 12% за месяц</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Новые</div>
+    <div class="stat-card__value">{{ stats.new }}</div>
+    <div class="stat-card__trend">Требуют внимания</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">В работе</div>
+    <div class="stat-card__value">{{ stats.in_progress }}</div>
+    <div class="stat-card__trend">Активно обрабатываются</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Выполнено</div>
+    <div class="stat-card__value">{{ stats.done }}</div>
+    <div class="stat-card__trend stat-card__trend--up">↑ 8% за неделю</div>
+  </div>
+</div>
+
+<!-- Фильтры -->
+<div class="filters">
+  <div class="filter-group">
+    <label class="filter-group__label" for="filter-category">Категория</label>
+    <select id="filter-category" onchange="updateFilters()">
+      <option value="">Все категории</option>
+      <option value="utility">ЖКХ</option>
+      <option value="road">Дороги</option>
+      <option value="education">Образование</option>
+      <option value="healthcare">Здравоохранение</option>
+      <option value="security">Безопасность</option>
+      <option value="other">Другое</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="filter-group__label" for="filter-status">Статус</label>
+    <select id="filter-status" onchange="updateFilters()">
+      <option value="">Все статусы</option>
+      <option value="new">🔵 Новое</option>
+      <option value="review">🟣 На рассмотрении</option>
+      <option value="in_progress">🟠 В работе</option>
+      <option value="done">🟢 Выполнено</option>
+      <option value="rejected">🔴 Отклонено</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="filter-group__label" for="filter-date-from">С даты</label>
+    <input type="date" id="filter-date-from" onchange="updateFilters()">
+  </div>
+  <div class="filter-group">
+    <label class="filter-group__label" for="filter-date-to">По дату</label>
+    <input type="date" id="filter-date-to" onchange="updateFilters()">
+  </div>
+  <div class="filter-group" style="justify-content: flex-end;">
+    <label class="filter-group__label">&nbsp;</label>
+    <a href="/deputy/dashboard" class="btn btn--outline btn--sm">Сбросить</a>
+  </div>
+</div>
+
+<!-- Таблица обращений -->
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Категория</th>
+        <th>Описание</th>
+        <th>Адрес</th>
+        <th>Дата создания</th>
+        <th>Статус</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for appeal in appeals %}
+      <tr>
+        <td>#{{ appeal.id }}</td>
+        <td>{{ get_category_name(appeal.category) }}</td>
+        <td>{{ appeal.description[:50] }}{% if appeal.description|length > 50 %}...{% endif %}</td>
+        <td>{{ appeal.address }}</td>
+        <td>{{ appeal.created_at.strftime('%d.%m.%Y') }}</td>
+        <td>
+          <span class="status-badge status-badge--{{ appeal.status }}">
+            {{ get_status_name(appeal.status) }}
+          </span>
+        </td>
+        <td>
+          <a href="/deputy/appeals/{{ appeal.id }}" class="btn btn--primary btn--sm">Просмотр</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--color-gray-500);">
+          Обращений не найдено
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Пагинация -->
+{% if pagination.pages > 1 %}
+<div class="flex justify-between items-center mt-4">
+  <span class="text-sm text-muted">
+    Страница {{ pagination.current }} из {{ pagination.pages }} (всего {{ pagination.total }})
+  </span>
+  <div class="flex gap-2">
+    {% if pagination.current > 1 %}
+      <a href="?page={{ pagination.current - 1 }}" class="btn btn--outline btn--sm">← Назад</a>
+    {% endif %}
+    {% if pagination.current < pagination.pages %}
+      <a href="?page={{ pagination.current + 1 }}" class="btn btn--outline btn--sm">Вперёд →</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Быстрые переходы -->
+<div class="card mt-4">
+  <h2 class="card__title">Быстрые переходы</h2>
+  <div class="flex gap-2">
+    <a href="/deputy/statistics" class="btn btn--outline">📊 Статистика округа</a>
+    <a href="/deputy/profile" class="btn btn--outline">👤 Мой профиль</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Сохранение фильтров в URL
+  function updateFilters() {
+    const params = new URLSearchParams();
+    
+    const category = document.getElementById('filter-category').value;
+    const status = document.getElementById('filter-status').value;
+    const dateFrom = document.getElementById('filter-date-from').value;
+    const dateTo = document.getElementById('filter-date-to').value;
+    
+    if (category) params.set('category', category);
+    if (status) params.set('status', status);
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
+    
+    window.location.href = '/deputy/dashboard?' + params.toString();
+  }
+  
+  // Восстановление фильтров из URL при загрузке
+  document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    
+    if (params.get('category')) {
+      document.getElementById('filter-category').value = params.get('category');
+    }
+    if (params.get('status')) {
+      document.getElementById('filter-status').value = params.get('status');
+    }
+    if (params.get('date_from')) {
+      document.getElementById('filter-date-from').value = params.get('date_from');
+    }
+    if (params.get('date_to')) {
+      document.getElementById('filter-date-to').value = params.get('date_to');
+    }
+  });
+</script>
+{% endblock %}

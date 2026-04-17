@@ -1,2 +1,252 @@
-<!--Deputy Statistics
-Аналитика округа: графики/таблицы по категориям, среднее время обработки, динамика за выбранный период, фильтры по датам, экспорт данных.-->
+{% extends "base.html" %}
+
+{% block title %}Статистика округа{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-header__title">Статистика округа №{{ deputy.district.number }}</h1>
+  <p class="page-header__subtitle">{{ deputy.district.name }} • Аналитика по обращениям граждан</p>
+</div>
+
+<!-- Фильтры по периоду -->
+<div class="filters">
+  <div class="filter-group">
+    <label class="filter-group__label" for="period-select">Период</label>
+    <select id="period-select" onchange="updatePeriod()">
+      <option value="week" {% if period == 'week' %}selected{% endif %}>За неделю</option>
+      <option value="month" {% if period == 'month' %}selected{% endif %}>За месяц</option>
+      <option value="quarter" {% if period == 'quarter' %}selected{% endif %}>За квартал</option>
+      <option value="year" {% if period == 'year' %}selected{% endif %}>За год</option>
+      <option value="all" {% if period == 'all' %}selected{% endif %}>За всё время</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label class="filter-group__label" for="date-from">С даты</label>
+    <input type="date" id="date-from" value="{{ date_from }}" onchange="updateCustomPeriod()">
+  </div>
+  <div class="filter-group">
+    <label class="filter-group__label" for="date-to">По дату</label>
+    <input type="date" id="date-to" value="{{ date_to }}" onchange="updateCustomPeriod()">
+  </div>
+  <div class="filter-group" style="justify-content: flex-end;">
+    <label class="filter-group__label">&nbsp;</label>
+    <button class="btn btn--outline btn--sm" onclick="exportData()">📥 Экспорт данных</button>
+  </div>
+</div>
+
+<!-- Основные показатели -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card__label">Всего обращений</div>
+    <div class="stat-card__value">{{ stats.total_appeals }}</div>
+    <div class="stat-card__trend stat-card__trend--up">↑ {{ stats.total_change }}% к прошлому периоду</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Решено проблем</div>
+    <div class="stat-card__value">{{ stats.resolved }}</div>
+    <div class="stat-card__trend stat-card__trend--up">↑ {{ stats.resolved_change }}%</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Среднее время решения</div>
+    <div class="stat-card__value">{{ stats.avg_resolution_days }} дн.</div>
+    <div class="stat-card__trend stat-card__trend--down">↓ {{ stats.resolution_change }}% (улучшение)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__label">Удовлетворённость</div>
+    <div class="stat-card__value">{{ stats.satisfaction_rate }}%</div>
+    <div class="stat-card__trend">На основе оценок граждан</div>
+  </div>
+</div>
+
+<!-- Графики -->
+<div class="flex gap-4" style="margin-top: 2rem; flex-wrap: wrap;">
+  <!-- Динамика обращений -->
+  <div class="card" style="flex: 2; min-width: 400px;">
+    <h2 class="card__title">Динамика обращений</h2>
+    <div class="chart-container" id="chart-dynamics">
+      <div style="text-align: center;">
+        <p style="font-weight: 600; margin-bottom: 1rem;">График поступлений по дням/неделям</p>
+        <div style="display: flex; align-items: flex-end; justify-content: center; gap: 8px; height: 200px;">
+          {% for item in stats.dynamics %}
+          <div style="width: 30px; background: var(--color-primary); border-radius: 4px 4px 0 0; height: {{ item.height }}%; position: relative;" title="{{ item.label }}: {{ item.value }}">
+            <span style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 10px;">{{ item.short_label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Распределение по категориям -->
+  <div class="card" style="flex: 1; min-width: 300px;">
+    <h2 class="card__title">По категориям</h2>
+    <div class="chart-container" id="chart-categories" style="flex-direction: column; align-items: stretch;">
+      {% for category in stats.by_category %}
+      <div style="margin-bottom: 0.75rem;">
+        <div class="flex justify-between text-sm mb-4">
+          <span>{{ category.name }}</span>
+          <span style="font-weight: 600;">{{ category.count }} ({{ category.percent }}%)</span>
+        </div>
+        <div style="height: 8px; background: var(--color-gray-200); border-radius: 4px; overflow: hidden;">
+          <div style="width: {{ category.percent }}%; height: 100%; background: var(--color-primary); border-radius: 4px;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Статусы и категории -->
+<div class="flex gap-4" style="margin-top: 1.5rem; flex-wrap: wrap;">
+  <!-- Распределение по статусам -->
+  <div class="card" style="flex: 1; min-width: 300px;">
+    <h2 class="card__title">Текущие статусы</h2>
+    <table style="font-size: 0.875rem;">
+      <thead>
+        <tr>
+          <th>Статус</th>
+          <th>Количество</th>
+          <th>%</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for status_item in stats.by_status %}
+        <tr>
+          <td>
+            <span class="status-badge status-badge--{{ status_item.status }}">
+              {{ get_status_name(status_item.status) }}
+            </span>
+          </td>
+          <td style="font-weight: 600;">{{ status_item.count }}</td>
+          <td class="text-muted">{{ status_item.percent }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Топ категорий -->
+  <div class="card" style="flex: 1; min-width: 300px;">
+    <h2 class="card__title">Популярные категории</h2>
+    <table style="font-size: 0.875rem;">
+      <thead>
+        <tr>
+          <th>Категория</th>
+          <th>Количество</th>
+          <th>Δ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for category in stats.top_categories %}
+        <tr>
+          <td>{{ category.name }}</td>
+          <td style="font-weight: 600;">{{ category.count }}</td>
+          <td class="{% if category.change >= 0 %}stat-card__trend--up{% else %}stat-card__trend--down{% endif %}">
+            {% if category.change >= 0 %}↑{% else %}↓{% endif %} {{ category.change|abs }}%
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Среднее время по категориям -->
+  <div class="card" style="flex: 1; min-width: 300px;">
+    <h2 class="card__title">Время обработки (дней)</h2>
+    <table style="font-size: 0.875rem;">
+      <thead>
+        <tr>
+          <th>Категория</th>
+          <th>Среднее</th>
+          <th>Макс</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat_time in stats.avg_time_by_category %}
+        <tr>
+          <td>{{ cat_time.name }}</td>
+          <td style="font-weight: 600;">{{ cat_time.avg }}</td>
+          <td class="text-muted">{{ cat_time.max }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Детальная таблица -->
+<div class="card mt-4">
+  <h2 class="card__title">Детализация по месяцам</h2>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Месяц</th>
+          <th>Всего</th>
+          <th>Новые</th>
+          <th>В работе</th>
+          <th>Выполнено</th>
+          <th>Отклонено</th>
+          <th>Среднее время (дн.)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for month in stats.monthly_stats %}
+        <tr>
+          <td style="font-weight: 600;">{{ month.name }}</td>
+          <td>{{ month.total }}</td>
+          <td><span class="status-badge status-badge--new">{{ month.new }}</span></td>
+          <td><span class="status-badge status-badge--in_progress">{{ month.in_progress }}</span></td>
+          <td><span class="status-badge status-badge--done">{{ month.done }}</span></td>
+          <td><span class="status-badge status-badge--rejected">{{ month.rejected }}</span></td>
+          <td>{{ month.avg_days }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Быстрые действия -->
+<div class="card mt-4">
+  <h2 class="card__title">Действия</h2>
+  <div class="flex gap-2">
+    <a href="/deputy/dashboard" class="btn btn--outline">← К обращениям</a>
+    <button class="btn btn--outline" onclick="exportData('pdf')">📄 Скачать PDF отчёт</button>
+    <button class="btn btn--outline" onclick="exportData('csv')">📊 Скачать CSV</button>
+    <button class="btn btn--outline" onclick="window.print()">🖨️ Печать</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Обновление периода
+  function updatePeriod() {
+    const period = document.getElementById('period-select').value;
+    window.location.href = '/deputy/statistics?period=' + period;
+  }
+  
+  // Обновление пользовательского периода
+  function updateCustomPeriod() {
+    const dateFrom = document.getElementById('date-from').value;
+    const dateTo = document.getElementById('date-to').value;
+    
+    if (dateFrom && dateTo) {
+      window.location.href = '/deputy/statistics?date_from=' + dateFrom + '&date_to=' + dateTo;
+    }
+  }
+  
+  // Экспорт данных
+  function exportData(format = 'csv') {
+    const params = new URLSearchParams(window.location.search);
+    params.set('format', format);
+    window.location.href = '/deputy/statistics/export?' + params.toString();
+  }
+  
+  // Автообновление каждые 5 минут
+  setTimeout(function() {
+    location.reload();
+  }, 300000);
+</script>
+{% endblock %}

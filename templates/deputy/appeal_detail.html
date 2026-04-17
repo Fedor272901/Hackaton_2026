@@ -1,2 +1,247 @@
-<!--Appeal Detail (Deputy)
-Детальный просмотр для депутата: карта с точкой проблемы, фото, описание, панель смены статуса с модальным подтверждением, форма официального ответа гражданину.-->
+{% extends "base.html" %}
+
+{% block title %}Обращение #{{ appeal.id }} — Детали{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="page-header__title">Обращение #{{ appeal.id }}</h1>
+      <p class="page-header__subtitle">{{ get_category_name(appeal.category) }} • {{ appeal.created_at.strftime('%d.%m.%Y') }}</p>
+    </div>
+    <span class="status-badge status-badge--{{ appeal.status }}" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+      {{ get_status_name(appeal.status) }}
+    </span>
+  </div>
+</div>
+
+<div class="flex gap-4" style="align-items: flex-start;">
+  <!-- Основная информация -->
+  <div style="flex: 2;">
+    <!-- Информация об обращении -->
+    <div class="card">
+      <h2 class="card__title">Информация об обращении</h2>
+      <div class="form-group">
+        <label class="form-group__label">Категория</label>
+        <p>{{ get_category_name(appeal.category) }}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-group__label">Описание проблемы</label>
+        <p style="white-space: pre-wrap; line-height: 1.8;">{{ appeal.description }}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-group__label">Адрес</label>
+        <p>{{ appeal.address }}</p>
+      </div>
+      
+      {% if appeal.photos %}
+      <div class="form-group">
+        <label class="form-group__label">Фотографии</label>
+        <div class="image-gallery">
+          {% for photo in appeal.photos %}
+          <div class="image-gallery__item">
+            <img src="{{ photo }}" alt="Фото проблемы" onclick="openModal('{{ photo }}')">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Информация о гражданине -->
+    <div class="card">
+      <h2 class="card__title">Автор обращения</h2>
+      <div class="flex items-center gap-2">
+        <div class="navbar__avatar" style="width: 48px; height: 48px; font-size: 1.25rem;">
+          {{ appeal.user.first_name[0] }}{{ appeal.user.last_name[0] }}
+        </div>
+        <div>
+          <p style="font-weight: 600;">{{ appeal.user.first_name }} {{ appeal.user.last_name }}</p>
+          <p class="text-sm text-muted">{{ appeal.user.email }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- История изменений -->
+    <div class="card">
+      <h2 class="card__title">История изменений</h2>
+      <div class="timeline">
+        <div class="timeline-item timeline-item--done">
+          <div class="timeline-item__date">{{ appeal.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+          <div class="timeline-item__title">Обращение создано</div>
+          <div class="timeline-item__text">Гражданин отправил обращение</div>
+        </div>
+        
+        {% for history in appeal.history %}
+        <div class="timeline-item timeline-item--done">
+          <div class="timeline-item__date">{{ history.changed_at.strftime('%d.%m.%Y %H:%M') }}</div>
+          <div class="timeline-item__title">Статус изменён на {{ get_status_name(history.new_status) }}</div>
+          {% if history.comment %}
+          <div class="timeline-item__text">{{ history.comment }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        
+        {% if appeal.responses %}
+        <div class="timeline-item">
+          <div class="timeline-item__date">{{ appeal.responses[-1].created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+          <div class="timeline-item__title">Ответ депутата</div>
+          <div class="timeline-item__text">{{ appeal.responses[-1].text }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Ответы депутата -->
+    <div class="card">
+      <h2 class="card__title">Переписка</h2>
+      {% if appeal.responses %}
+        {% for response in appeal.responses %}
+        <div class="mb-4" style="padding: 1rem; background: var(--color-gray-50); border-radius: 0.5rem;">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm" style="font-weight: 600;">{{ response.deputy.first_name }} {{ response.deputy.last_name }}</span>
+            <span class="text-sm text-muted">{{ response.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+          </div>
+          <p style="white-space: pre-wrap;">{{ response.text }}</p>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">Ответов пока нет</p>
+      {% endif %}
+      
+      <!-- Форма ответа -->
+      <div class="mt-4">
+        <form action="/deputy/appeals/{{ appeal.id }}/reply" method="POST">
+          <div class="form-group">
+            <label class="form-group__label" for="reply-text">Ваш ответ</label>
+            <textarea id="reply-text" name="text" rows="4" placeholder="Введите официальный ответ гражданину..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn--primary">Отправить ответ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Боковая панель -->
+  <div style="flex: 1;">
+    <!-- Карта -->
+    <div class="card">
+      <h2 class="card__title">Местоположение</h2>
+      <div class="map-container" id="map">
+        <div style="text-align: center;">
+          <p>📍 {{ appeal.address }}</p>
+          <p class="text-sm text-muted mt-4">Координаты: {{ appeal.latitude }}, {{ appeal.longitude }}</p>
+          <p class="text-sm text-muted">Интерактивная карта будет загружена через API</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Смена статуса -->
+    <div class="card">
+      <h2 class="card__title">Управление статусом</h2>
+      <form id="status-form" action="/deputy/appeals/{{ appeal.id }}/status" method="POST">
+        <div class="form-group">
+          <label class="form-group__label" for="new-status">Новый статус</label>
+          <select id="new-status" name="status" required>
+            <option value="new" {% if appeal.status == 'new' %}selected{% endif %}>🔵 Новое</option>
+            <option value="review" {% if appeal.status == 'review' %}selected{% endif %}>🟣 На рассмотрении</option>
+            <option value="in_progress" {% if appeal.status == 'in_progress' %}selected{% endif %}>🟠 В работе</option>
+            <option value="done" {% if appeal.status == 'done' %}selected{% endif %}>🟢 Выполнено</option>
+            <option value="rejected" {% if appeal.status == 'rejected' %}selected{% endif %}>🔴 Отклонено</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-group__label" for="status-comment">Комментарий (необязательно)</label>
+          <textarea id="status-comment" name="comment" rows="3" placeholder="Причина изменения статуса..."></textarea>
+        </div>
+        <button type="button" class="btn btn--primary" onclick="openStatusModal()">Изменить статус</button>
+      </form>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="card">
+      <h2 class="card__title">Действия</h2>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <a href="/deputy/dashboard" class="btn btn--outline">← Назад к списку</a>
+        <a href="/deputy/appeals/{{ appeal.id }}/print" class="btn btn--outline" target="_blank">🖨️ Печать</a>
+        <a href="/deputy/appeals/{{ appeal.id }}/export" class="btn btn--outline">📥 Экспорт PDF</a>
+      </div>
+    </div>
+
+    <!-- Информация об округе -->
+    <div class="card">
+      <h2 class="card__title">Ваш округ</h2>
+      <p><strong>№{{ deputy.district.number }}</strong></p>
+      <p class="text-sm text-muted">{{ deputy.district.name }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения смены статуса -->
+<div class="modal-overlay" id="status-modal">
+  <div class="modal">
+    <h3 class="modal__title">Подтверждение изменения статуса</h3>
+    <p>Вы уверены, что хотите изменить статус обращения?</p>
+    <p class="text-sm text-muted mt-4">Это действие будет записано в историю и уведомит гражданина.</p>
+    <div class="modal__actions">
+      <button class="btn btn--outline" onclick="closeStatusModal()">Отмена</button>
+      <button class="btn btn--primary" onclick="submitStatusChange()">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно просмотра фото -->
+<div class="modal-overlay" id="photo-modal" onclick="closePhotoModal(event)">
+  <div class="modal" style="max-width: 800px;">
+    <img id="photo-full" src="" alt="Полное фото" style="width: 100%; border-radius: 0.5rem;">
+    <div class="modal__actions">
+      <button class="btn btn--outline" onclick="closePhotoModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Открытие модального окна смены статуса
+  function openStatusModal() {
+    const newStatus = document.getElementById('new-status').value;
+    const currentStatus = '{{ appeal.status }}';
+    
+    if (newStatus === currentStatus && !document.getElementById('status-comment').value) {
+      alert('Выберите новый статус или добавьте комментарий');
+      return;
+    }
+    
+    document.getElementById('status-modal').classList.add('active');
+  }
+  
+  // Закрытие модального окна смены статуса
+  function closeStatusModal() {
+    document.getElementById('status-modal').classList.remove('active');
+  }
+  
+  // Отправка формы смены статуса
+  function submitStatusChange() {
+    document.getElementById('status-form').submit();
+  }
+  
+  // Открытие фото в модальном окне
+  function openModal(photoSrc) {
+    document.getElementById('photo-full').src = photoSrc;
+    document.getElementById('photo-modal').classList.add('active');
+  }
+  
+  // Закрытие модального окна фото
+  function closePhotoModal(event) {
+    if (!event || event.target.id === 'photo-modal') {
+      document.getElementById('photo-modal').classList.remove('active');
+    }
+  }
+  
+  // Предотвращение закрытия при клике на контент
+  document.querySelector('#photo-modal .modal').addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+</script>
+{% endblock %}
