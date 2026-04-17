@@ -2,15 +2,12 @@
 .vscode/
 .idea/
 
-# Node
-node_modules/
-ubnktyc
 # Python
 __pycache__/
 *.pyc
 venv/
 
-# Env
+# Env (секреты)
 .env
 
 # Logs
@@ -19,5 +16,3 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
-
-alembic.ini
