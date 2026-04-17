@@ -22,7 +22,7 @@ def get_current_user(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         # 3. Достаём user_id из токена
-        user_id = payload.get("sub")
+        user_id = int(payload.get("sub"))
 
         # если внутри токена нет id — токен неправильный
         if user_id is None:
