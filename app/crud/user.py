@@ -8,11 +8,11 @@ def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
 
 
-def create_user(db: Session, user_data: UserCreate):
-    existing_user = get_user_by_email(db, user_data.email)
-    if existing_user:
-        return None
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(User).filter(User.id == user_id).first()
 
+
+def create_user(db: Session, user_data: UserCreate):
     user = User(
         first_name=user_data.first_name,
         last_name=user_data.last_name,

@@ -54,7 +54,12 @@ def login(
         raise HTTPException(status_code=400, detail="Invalid email or password")
 
     # 3. создаем токен
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(
+        data={
+            "sub": user.id,  # кто пользователь
+            "role": user.role,  # какая у него роль
+        }
+    )
 
     # 3. возвращаем пользователя
     return {"access_token": access_token, "token_type": "bearer"}
