@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy.orm import Session
 from typing import Annotated
-from fastapi import HTTPException
 
 from app.db.database import get_db
-from app.schemas.user import UserCreate, UserRead
-from app.crud.user import create_user
+from app.schemas.user import UserCreate, UserRead, UserLogin
+from app.crud.user import create_user, get_user_by_email
+from app.core.security import verify_password
 
 router = APIRouter()
 
@@ -35,3 +35,22 @@ def register(
         raise HTTPException(status_code=400, detail="Email already exists")
 
     return new_user
+
+
+@router.post("/login", response_model=UserRead)
+def login(
+    user_data: UserLogin,
+    db: Session = Depends(get_db),
+):
+    # 1. ищем пользователя
+    user = get_user_by_email(db, user_data.email)
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+
+    # 2. проверяем пароль
+    if not verify_password(user_data.password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+
+    # 3. возвращаем пользователя
+    return user
