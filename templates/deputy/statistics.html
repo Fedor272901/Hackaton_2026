@@ -1,252 +1,201 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Статистика округа депутата — аналитика по обращениям граждан.">
+  <title>Портал обращений депутатам — Статистика округа</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="dashboard-page">
+  <!-- CSS-only вкладки кабинета депутата -->
+  <input class="state-toggle" type="radio" name="deputy-view" id="deputy-view-appeals">
+  <input class="state-toggle" type="radio" name="deputy-view" id="deputy-view-statistics" checked>
+  
+  <div class="dashboard-shell deputy-dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-header__brand">
+        <div class="dashboard-header__logo" aria-hidden="true">МД</div>
+        <div>
+          <p class="dashboard-header__eyebrow">Портал обращений</p>
+          <p class="dashboard-header__title">Кабинет депутата</p>
+        </div>
+      </div>
 
-{% block title %}Статистика округа{% endblock %}
+      <nav class="dashboard-nav" aria-label="Навигация по кабинету">
+        <label class="dashboard-nav__link" for="deputy-view-appeals">Обращения</label>
+        <label class="dashboard-nav__link" for="deputy-view-statistics">Статистика</label>
+      </nav>
 
-{% block content %}
-<div class="page-header">
-  <h1 class="page-header__title">Статистика округа №{{ deputy.district.number }}</h1>
-  <p class="page-header__subtitle">{{ deputy.district.name }} • Аналитика по обращениям граждан</p>
-</div>
-
-<!-- Фильтры по периоду -->
-<div class="filters">
-  <div class="filter-group">
-    <label class="filter-group__label" for="period-select">Период</label>
-    <select id="period-select" onchange="updatePeriod()">
-      <option value="week" {% if period == 'week' %}selected{% endif %}>За неделю</option>
-      <option value="month" {% if period == 'month' %}selected{% endif %}>За месяц</option>
-      <option value="quarter" {% if period == 'quarter' %}selected{% endif %}>За квартал</option>
-      <option value="year" {% if period == 'year' %}selected{% endif %}>За год</option>
-      <option value="all" {% if period == 'all' %}selected{% endif %}>За всё время</option>
-    </select>
-  </div>
-  <div class="filter-group">
-    <label class="filter-group__label" for="date-from">С даты</label>
-    <input type="date" id="date-from" value="{{ date_from }}" onchange="updateCustomPeriod()">
-  </div>
-  <div class="filter-group">
-    <label class="filter-group__label" for="date-to">По дату</label>
-    <input type="date" id="date-to" value="{{ date_to }}" onchange="updateCustomPeriod()">
-  </div>
-  <div class="filter-group" style="justify-content: flex-end;">
-    <label class="filter-group__label">&nbsp;</label>
-    <button class="btn btn--outline btn--sm" onclick="exportData()">📥 Экспорт данных</button>
-  </div>
-</div>
-
-<!-- Основные показатели -->
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-card__label">Всего обращений</div>
-    <div class="stat-card__value">{{ stats.total_appeals }}</div>
-    <div class="stat-card__trend stat-card__trend--up">↑ {{ stats.total_change }}% к прошлому периоду</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card__label">Решено проблем</div>
-    <div class="stat-card__value">{{ stats.resolved }}</div>
-    <div class="stat-card__trend stat-card__trend--up">↑ {{ stats.resolved_change }}%</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card__label">Среднее время решения</div>
-    <div class="stat-card__value">{{ stats.avg_resolution_days }} дн.</div>
-    <div class="stat-card__trend stat-card__trend--down">↓ {{ stats.resolution_change }}% (улучшение)</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-card__label">Удовлетворённость</div>
-    <div class="stat-card__value">{{ stats.satisfaction_rate }}%</div>
-    <div class="stat-card__trend">На основе оценок граждан</div>
-  </div>
-</div>
-
-<!-- Графики -->
-<div class="flex gap-4" style="margin-top: 2rem; flex-wrap: wrap;">
-  <!-- Динамика обращений -->
-  <div class="card" style="flex: 2; min-width: 400px;">
-    <h2 class="card__title">Динамика обращений</h2>
-    <div class="chart-container" id="chart-dynamics">
-      <div style="text-align: center;">
-        <p style="font-weight: 600; margin-bottom: 1rem;">График поступлений по дням/неделям</p>
-        <div style="display: flex; align-items: flex-end; justify-content: center; gap: 8px; height: 200px;">
-          {% for item in stats.dynamics %}
-          <div style="width: 30px; background: var(--color-primary); border-radius: 4px 4px 0 0; height: {{ item.height }}%; position: relative;" title="{{ item.label }}: {{ item.value }}">
-            <span style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 10px;">{{ item.short_label }}</span>
+      <div class="dashboard-header__profile">
+        <div class="dashboard-header__user">
+          <div class="dashboard-header__avatar" aria-hidden="true">ИО</div>
+          <div>
+            <p class="dashboard-header__name">ИМЯ ОТЧЕСТВО</p>
+            <p class="dashboard-header__role">Депутат</p>
           </div>
-          {% endfor %}
         </div>
+        <a class="button button--secondary button--compact" href="../public/auth.html">Выйти</a>
       </div>
-    </div>
-  </div>
+    </header>
 
-  <!-- Распределение по категориям -->
-  <div class="card" style="flex: 1; min-width: 300px;">
-    <h2 class="card__title">По категориям</h2>
-    <div class="chart-container" id="chart-categories" style="flex-direction: column; align-items: stretch;">
-      {% for category in stats.by_category %}
-      <div style="margin-bottom: 0.75rem;">
-        <div class="flex justify-between text-sm mb-4">
-          <span>{{ category.name }}</span>
-          <span style="font-weight: 600;">{{ category.count }} ({{ category.percent }}%)</span>
+    <main class="dashboard-main">
+      <section class="dashboard-view dashboard-view--statistics" id="statistics-panel" aria-labelledby="statistics-title">
+        <div class="dashboard-hero">
+          <div>
+            <p class="section-card__eyebrow">Аналитика</p>
+            <h1 class="dashboard-hero__title" id="statistics-title">Статистика округа №1</h1>
+            <p class="dashboard-hero__text">Центральный округ · Отслеживайте динамику обращений и эффективность работы.</p>
+          </div>
+          <div class="dashboard-hero__status">
+            <span class="dashboard-hero__status-dot" aria-hidden="true"></span>
+            <span>СДЕЛАТЬ ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ СТАТУСА С ДАТОЙ И ВРЕМЕНЕМ</span>
+          </div>
         </div>
-        <div style="height: 8px; background: var(--color-gray-200); border-radius: 4px; overflow: hidden;">
-          <div style="width: {{ category.percent }}%; height: 100%; background: var(--color-primary); border-radius: 4px;"></div>
+
+        <section class="summary-grid" aria-label="Основные показатели">
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Всего обращений</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Решено проблем</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Среднее время решения</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Удовлетворённость</p>
+          </article>
+        </section>
+
+        <section class="charts-grid" aria-label="Графики и диаграммы">
+          <article class="chart-card chart-card--large">
+            <p class="submission-card__eyebrow">Динамика обращений</p>
+            <div class="chart-placeholder chart-placeholder--bar" role="img" aria-label="Гистограмма динамики обращений">
+              <span class="chart-placeholder__bar" style="height: 40%"></span>
+              <span class="chart-placeholder__bar" style="height: 65%"></span>
+              <span class="chart-placeholder__bar" style="height: 50%"></span>
+              <span class="chart-placeholder__bar" style="height: 80%"></span>
+              <span class="chart-placeholder__bar" style="height: 60%"></span>
+              <span class="chart-placeholder__bar" style="height: 75%"></span>
+              <span class="chart-placeholder__bar" style="height: 55%"></span>
+            </div>
+          </article>
+
+          <article class="chart-card">
+            <p class="submission-card__eyebrow">По категориям</p>
+            <div class="chart-placeholder chart-placeholder--bars-horizontal" role="img" aria-label="Горизонтальная гистограмма по категориям">
+              <div class="chart-placeholder__bar-row">
+                <span class="chart-placeholder__bar-label">ЖКХ</span>
+                <span class="chart-placeholder__bar-fill" style="width: 70%"></span>
+              </div>
+              <div class="chart-placeholder__bar-row">
+                <span class="chart-placeholder__bar-label">Дороги</span>
+                <span class="chart-placeholder__bar-fill" style="width: 50%"></span>
+              </div>
+              <div class="chart-placeholder__bar-row">
+                <span class="chart-placeholder__bar-label">Благоустройство</span>
+                <span class="chart-placeholder__bar-fill" style="width: 35%"></span>
+              </div>
+              <div class="chart-placeholder__bar-row">
+                <span class="chart-placeholder__bar-label">Безопасность</span>
+                <span class="chart-placeholder__bar-fill" style="width: 25%"></span>
+              </div>
+            </div>
+          </article>
+
+          <article class="chart-card">
+            <p class="submission-card__eyebrow">Текущие статусы</p>
+            <ul class="status-list">
+              <li class="status-list__item">
+                <span class="appeal-card__status appeal-card__status--new">Новые</span>
+                <span class="status-list__count">ТЕСТОВОЕ ЧИСЛО</span>
+              </li>
+              <li class="status-list__item">
+                <span class="appeal-card__status appeal-card__status--progress">В работе</span>
+                <span class="status-list__count">ТЕСТОВОЕ ЧИСЛО</span>
+              </li>
+              <li class="status-list__item">
+                <span class="appeal-card__status appeal-card__status--done">Выполнено</span>
+                <span class="status-list__count">ТЕСТОВОЕ ЧИСЛО</span>
+              </li>
+              <li class="status-list__item">
+                <span class="appeal-card__status appeal-card__status--rejected">Отклонено</span>
+                <span class="status-list__count">ТЕСТОВОЕ ЧИСЛО</span>
+              </li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="stats-table-section" aria-label="Детализация по месяцам">
+          <div class="table-wrapper">
+            <table class="appeals-table">
+              <thead>
+                <tr>
+                  <th scope="col">Месяц</th>
+                  <th scope="col">Всего</th>
+                  <th scope="col">Новые</th>
+                  <th scope="col">В работе</th>
+                  <th scope="col">Выполнено</th>
+                  <th scope="col">Отклонено</th>
+                  <th scope="col">Ср. время (дн.)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Январь 2025</td>
+                  <td>ТЕСТОВОЕ ЧИСЛО</td>
+                  <td><span class="appeal-card__status appeal-card__status--new">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td><span class="appeal-card__status appeal-card__status--progress">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td><span class="appeal-card__status appeal-card__status--done">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td><span class="appeal-card__status appeal-card__status--rejected">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td>ТЕСТОВОЕ ЧИСЛО</td>
+                </tr>
+                <tr>
+                  <td>Декабрь 2024</td>
+                  <td>ТЕСТОВОЕ ЧИСЛО</td>
+                  <td><span class="appeal-card__status appeal-card__status--new">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td><span class="appeal-card__status appeal-card__status--progress">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td><span class="appeal-card__status appeal-card__status--done">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td><span class="appeal-card__status appeal-card__status--rejected">ТЕСТОВОЕ ЧИСЛО</span></td>
+                  <td>ТЕСТОВОЕ ЧИСЛО</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="quick-links-card">
+          <p class="submission-card__eyebrow">Действия</p>
+          <div class="quick-links-list">
+            <a class="text-link text-link--strong" href="dashboard.html">← К обращениям</a>
+            <a class="text-link text-link--strong" href="#export">📥 Экспорт данных</a>
+            <a class="text-link text-link--strong" href="#print">🖨️ Печать</a>
+          </div>
+        </aside>
+      </section>
+
+      <section class="dashboard-view dashboard-view--appeals" id="appeals-panel" aria-labelledby="appeals-title">
+        <div class="dashboard-hero">
+          <div>
+            <p class="section-card__eyebrow">Кабинет депутата</p>
+            <h1 class="dashboard-hero__title" id="appeals-title">Управление обращениями</h1>
+            <p class="dashboard-hero__text">Обрабатывайте обращения граждан вашего округа, меняйте статусы и отправляйте ответы.</p>
+          </div>
         </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
 
-<!-- Статусы и категории -->
-<div class="flex gap-4" style="margin-top: 1.5rem; flex-wrap: wrap;">
-  <!-- Распределение по статусам -->
-  <div class="card" style="flex: 1; min-width: 300px;">
-    <h2 class="card__title">Текущие статусы</h2>
-    <table style="font-size: 0.875rem;">
-      <thead>
-        <tr>
-          <th>Статус</th>
-          <th>Количество</th>
-          <th>%</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for status_item in stats.by_status %}
-        <tr>
-          <td>
-            <span class="status-badge status-badge--{{ status_item.status }}">
-              {{ get_status_name(status_item.status) }}
-            </span>
-          </td>
-          <td style="font-weight: 600;">{{ status_item.count }}</td>
-          <td class="text-muted">{{ status_item.percent }}%</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        <aside class="quick-links-card">
+          <p class="submission-card__eyebrow">Переход</p>
+          <div class="quick-links-list">
+            <a class="text-link text-link--strong" href="dashboard.html">Перейти к списку обращений</a>
+          </div>
+        </aside>
+      </section>
+    </main>
   </div>
-
-  <!-- Топ категорий -->
-  <div class="card" style="flex: 1; min-width: 300px;">
-    <h2 class="card__title">Популярные категории</h2>
-    <table style="font-size: 0.875rem;">
-      <thead>
-        <tr>
-          <th>Категория</th>
-          <th>Количество</th>
-          <th>Δ</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for category in stats.top_categories %}
-        <tr>
-          <td>{{ category.name }}</td>
-          <td style="font-weight: 600;">{{ category.count }}</td>
-          <td class="{% if category.change >= 0 %}stat-card__trend--up{% else %}stat-card__trend--down{% endif %}">
-            {% if category.change >= 0 %}↑{% else %}↓{% endif %} {{ category.change|abs }}%
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Среднее время по категориям -->
-  <div class="card" style="flex: 1; min-width: 300px;">
-    <h2 class="card__title">Время обработки (дней)</h2>
-    <table style="font-size: 0.875rem;">
-      <thead>
-        <tr>
-          <th>Категория</th>
-          <th>Среднее</th>
-          <th>Макс</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for cat_time in stats.avg_time_by_category %}
-        <tr>
-          <td>{{ cat_time.name }}</td>
-          <td style="font-weight: 600;">{{ cat_time.avg }}</td>
-          <td class="text-muted">{{ cat_time.max }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Детальная таблица -->
-<div class="card mt-4">
-  <h2 class="card__title">Детализация по месяцам</h2>
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>Месяц</th>
-          <th>Всего</th>
-          <th>Новые</th>
-          <th>В работе</th>
-          <th>Выполнено</th>
-          <th>Отклонено</th>
-          <th>Среднее время (дн.)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for month in stats.monthly_stats %}
-        <tr>
-          <td style="font-weight: 600;">{{ month.name }}</td>
-          <td>{{ month.total }}</td>
-          <td><span class="status-badge status-badge--new">{{ month.new }}</span></td>
-          <td><span class="status-badge status-badge--in_progress">{{ month.in_progress }}</span></td>
-          <td><span class="status-badge status-badge--done">{{ month.done }}</span></td>
-          <td><span class="status-badge status-badge--rejected">{{ month.rejected }}</span></td>
-          <td>{{ month.avg_days }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Быстрые действия -->
-<div class="card mt-4">
-  <h2 class="card__title">Действия</h2>
-  <div class="flex gap-2">
-    <a href="/deputy/dashboard" class="btn btn--outline">← К обращениям</a>
-    <button class="btn btn--outline" onclick="exportData('pdf')">📄 Скачать PDF отчёт</button>
-    <button class="btn btn--outline" onclick="exportData('csv')">📊 Скачать CSV</button>
-    <button class="btn btn--outline" onclick="window.print()">🖨️ Печать</button>
-  </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  // Обновление периода
-  function updatePeriod() {
-    const period = document.getElementById('period-select').value;
-    window.location.href = '/deputy/statistics?period=' + period;
-  }
-  
-  // Обновление пользовательского периода
-  function updateCustomPeriod() {
-    const dateFrom = document.getElementById('date-from').value;
-    const dateTo = document.getElementById('date-to').value;
-    
-    if (dateFrom && dateTo) {
-      window.location.href = '/deputy/statistics?date_from=' + dateFrom + '&date_to=' + dateTo;
-    }
-  }
-  
-  // Экспорт данных
-  function exportData(format = 'csv') {
-    const params = new URLSearchParams(window.location.search);
-    params.set('format', format);
-    window.location.href = '/deputy/statistics/export?' + params.toString();
-  }
-  
-  // Автообновление каждые 5 минут
-  setTimeout(function() {
-    location.reload();
-  }, 300000);
-</script>
-{% endblock %}
+</body>
+</html>
