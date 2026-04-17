@@ -4,7 +4,7 @@
 
 # Node
 node_modules/
-
+ubnktyc
 # Python
 __pycache__/
 *.pyc
@@ -19,3 +19,5 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+alembic.ini
