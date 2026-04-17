@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.config import SECRET_KEY, ALGORITHM
 from app.db.database import get_db
 from app.crud.user import get_user_by_id
+from app.db.models import User
 
 security = HTTPBearer()
 
@@ -41,3 +42,14 @@ def get_current_user(
 
     # 5. Возвращаем пользователя дальше в endpoint
     return user
+
+
+def get_current_active_user(current_user: User = Depends(get_current_user)):
+    """
+    Получить текущего активного пользователя
+    
+    В будущем можно добавить проверку:
+    - if not current_user.is_active:
+    -     raise HTTPException(status_code=403, detail="User is inactive")
+    """
+    return current_user
