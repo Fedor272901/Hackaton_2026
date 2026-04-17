@@ -6,3 +6,13 @@ class UserCreate(BaseModel):
     last_name: str
     email: EmailStr
     password: str
+
+class UserRead(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email: EmailStr
+    role: str
+
+    class Config:
+        from_attributes = True
