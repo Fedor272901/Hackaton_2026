@@ -20,8 +20,12 @@ from app.schemas.requests import (
 from app.crud import request as request_crud
 from app.core.dependencies import get_current_user, get_current_active_user
 from app.core.permissions import require_role
+from app.core.rate_limit import RateLimiter
+from app.core.spam_filter import SpamFilter
 
 router = APIRouter()
+
+
 
 
 # ---------------------------
@@ -68,6 +72,30 @@ def create_request(
     - **longitude**: долгота для карты (опционально)
     - **photo_urls**: список URL загруженных фотографий (опционально)
     """
+
+     # ЗАЩИТА 1: Rate Limit (5 обращений в час)
+    if not RateLimiter.check(current_user.id):
+        raise HTTPException(
+            status_code=429, 
+            detail="Лимит исчерпан: максимум 5 обращений в сутки"
+        )
+    
+    # ЗАЩИТА 2: Спам-фильтр
+    full_text = f"{request_data.title} {request_data.description}"
+    is_spam, reason = SpamFilter.check(full_text)
+    if is_spam:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Обращение отклонено: {reason}"
+        )
+    
+    # ЗАЩИТА 3: Проверка дубликатов
+    if request_crud.check_duplicate_request(db, current_user.id, request_data.title):
+        raise HTTPException(
+            status_code=400, 
+            detail="Похожее обращение уже было отправлено недавно"
+        )
+
     try:
         new_request = request_crud.create_request(
             db=db,

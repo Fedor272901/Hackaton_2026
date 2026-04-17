@@ -474,3 +474,28 @@ def get_statistics(db: Session, district_id: Optional[int] = None):
         "average_resolution_days": round(avg_resolution_days, 1),
         "district_id": district_id
     }
+
+def check_duplicate_request(db: Session, user_id: int, text: str, hours: int = 24) -> bool:
+    """Проверка на похожие обращения за последние N часов"""
+    from datetime import datetime, timedelta
+    from difflib import SequenceMatcher
+    
+    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+    
+    recent = db.query(Request).filter(
+        Request.user_id == user_id,
+        Request.created_at >= cutoff_time
+    ).all()
+    
+    for req in recent:
+        # Сравниваем заголовки
+        title_similarity = SequenceMatcher(None, text, req.title).ratio()
+        if title_similarity > 0.7:  # 70% схожести
+            return True
+        
+        # Сравниваем описание
+        desc_similarity = SequenceMatcher(None, text, req.description).ratio()
+        if desc_similarity > 0.6:  # 60% схожести
+            return True
+    
+    return False
