@@ -37,26 +37,26 @@ class User(Base):
 
     # Связи с каскадным удалением
     requests = relationship(
-        "Request", 
-        back_populates="user", 
+        "Request",
+        back_populates="user",
         cascade="all, delete-orphan"
     )
-    
+
     messages = relationship(
-        "Message", 
-        back_populates="user", 
+        "Message",
+        back_populates="user",
         cascade="all, delete-orphan"
     )
 
     role_requests = relationship(
-        "RoleRequest", 
-        foreign_keys="[RoleRequest.user_id]", 
+        "RoleRequest",
+        foreign_keys="[RoleRequest.user_id]",
         back_populates="user",
         cascade="all, delete-orphan"
     )
 
     processed_role_requests = relationship(
-        "RoleRequest", 
+        "RoleRequest",
         foreign_keys="[RoleRequest.processed_by_admin_id]"
     )
 
@@ -249,3 +249,8 @@ class StatusHistory(Base):
 
     # связи
     request = relationship("Request", back_populates="history")
+
+    changed_by_user = relationship("User")
+
+    old_status = relationship("RequestStatus", foreign_keys=[old_status_id])
+    new_status = relationship("RequestStatus", foreign_keys=[new_status_id])
