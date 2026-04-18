@@ -29,7 +29,7 @@ def get_current_user(
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-    except JWTError:
+    except (JWTError, ValueError, TypeError):
         # если токен подделан / истёк / неправильный
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -47,7 +47,7 @@ def get_current_user(
 def get_current_active_user(current_user: User = Depends(get_current_user)):
     """
     Получить текущего активного пользователя
-    
+
     В будущем можно добавить проверку:
     - if not current_user.is_active:
     -     raise HTTPException(status_code=403, detail="User is inactive")
