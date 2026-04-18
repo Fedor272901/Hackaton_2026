@@ -1,23 +1,27 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from datetime import datetime
+
 
 class DeputyBase(BaseModel):
     user_id: int
     district_id: int
-    office_phone: Optional[str] = None
-    office_address: Optional[str] = None
+
 
 class DeputyCreate(DeputyBase):
     pass
 
+
 class DeputyUpdate(BaseModel):
-    user_id: Optional[int] = None
     district_id: Optional[int] = None
-    office_phone: Optional[str] = None
-    office_address: Optional[str] = None
 
-class Deputy(DeputyBase):
+
+class DeputyResponse(DeputyBase):
     id: int
+    appointed_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+
+class AssignDeputyRequest(BaseModel):
+    user_id: int
+    district_id: int

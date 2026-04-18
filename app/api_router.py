@@ -8,6 +8,8 @@ from app.api.v1.endpoints import (
     requests, districts
     )
 
+from app.api.v1.endpoints import districts
+
 
 
 api_router = APIRouter()
@@ -19,7 +21,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 api_router.include_router(requests.router, prefix="/requests", tags=["Requests"])
 
 # блок 3
-api_router.include_router(districts.router, prefix="/districts", tags=["districts"])
+api_router.include_router(districts.router, prefix="/districts", tags=["Districts"])
 
 # блок 4 — категории, статусы, заявки на роль
 api_router.include_router(category.router, prefix="/categories", tags=["Categories"])
