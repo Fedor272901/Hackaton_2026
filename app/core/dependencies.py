@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from app.core.config import SECRET_KEY, ALGORITHM
 from app.db.database import get_db
 from app.crud.user import get_user_by_id
+from app.db.models import User
+from app.core.roles import Role
 
 security = HTTPBearer()
 
@@ -28,7 +30,7 @@ def get_current_user(
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-    except JWTError:
+    except (JWTError, ValueError, TypeError):
         # если токен подделан / истёк / неправильный
         raise HTTPException(status_code=401, detail="Invalid token")
 
@@ -39,5 +41,22 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
-    # 5. Возвращаем пользователя дальше в endpoint
+    # 5. Приводим роль к Enum (ЕДИНОЖДЫ)
+    try:
+        user.role = Role(user.role)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Некорректная роль пользователя")
+
+    # 6. Возвращаем пользователя
     return user
+
+
+def get_current_active_user(current_user: User = Depends(get_current_user)):
+    """
+    Получить текущего активного пользователя
+
+    В будущем можно добавить проверку:
+    - if not current_user.is_active:
+    -     raise HTTPException(status_code=403, detail="User is inactive")
+    """
+    return current_user
