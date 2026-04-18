@@ -2,6 +2,8 @@ from pydantic import BaseModel, EmailStr
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from app.core.roles import Role
+from datetime import datetime
+
 
 class UserCreate(BaseModel):
     first_name: str
@@ -41,9 +43,10 @@ class UserResponse(BaseModel):
     last_name: str
     email: str
     role: Role
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
+
 
 
 class UserListResponse(BaseModel):
