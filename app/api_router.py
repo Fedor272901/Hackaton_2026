@@ -1,13 +1,22 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import users, auth
-from app.api.v1.endpoints import category, request_status, role_request
-from app.api.v1.endpoints import districts
+from app.api.v1.endpoints import (
+    users,
+    auth,
+    category,
+    request_status,
+    role_request,
+    requests, districts
+    )
+
 
 
 api_router = APIRouter()
 
 api_router.include_router(users.router, prefix="/users", tags=["Users"])
 api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
+
+#блок 2
+api_router.include_router(requests.router, prefix="/requests", tags=["Requests"])
 
 # блок 3
 api_router.include_router(districts.router, prefix="/districts", tags=["districts"])
