@@ -1,6 +1,8 @@
 # IDE
 .vscode/
 .idea/
+.vs/
+*.slnx
 
 # Python
 __pycache__/
