@@ -30,23 +30,35 @@ class User(Base):
         Enum("citizen", "deputy", "admin", "superuser", name="user_roles"),
         nullable=False,
         index=True
-    )  # citizen / deputy / admin
+    )
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # связи
-    requests = relationship("Request", back_populates="user")
-    messages = relationship("Message", back_populates="user")
+    # Связи с каскадным удалением
+    requests = relationship(
+        "Request", 
+        back_populates="user", 
+        cascade="all, delete-orphan"
+    )
+    
+    messages = relationship(
+        "Message", 
+        back_populates="user", 
+        cascade="all, delete-orphan"
+    )
 
     role_requests = relationship(
-        "RoleRequest", foreign_keys="[RoleRequest.user_id]", back_populates="user"
+        "RoleRequest", 
+        foreign_keys="[RoleRequest.user_id]", 
+        back_populates="user",
+        cascade="all, delete-orphan"
     )
 
     processed_role_requests = relationship(
-        "RoleRequest", foreign_keys="[RoleRequest.processed_by_admin_id]"
+        "RoleRequest", 
+        foreign_keys="[RoleRequest.processed_by_admin_id]"
     )
-
 
 # ---------------------
 # ROLE REQUESTS
