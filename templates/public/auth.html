@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Авторизация гражданина в портале подачи обращений к местным депутатам.">
   <title>Портал обращений депутатам — Авторизация</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body class="auth-page">
   <!-- CSS-only переключение между входом и регистрацией -->
@@ -91,7 +91,7 @@
         </div>
 
         <div class="auth-forms">
-          <form class="auth-form auth-form--login" action="dashboard.html" method="get">
+          <form class="auth-form auth-form--login" action="/templates/citizen/dashboard.html" method="get">
             <div class="auth-form__body">
               <div class="form__field">
                 <label class="form__label" for="login-identity">Email</label>
@@ -101,8 +101,6 @@
                   name="identity" 
                   type="email" 
                   placeholder="example@mail.ru" 
-                  /* Паттерн: только стандартный формат email */
-                  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}"
                   title="Введите корректный адрес электронной почты"
                   required
                 >
@@ -230,7 +228,11 @@
     </section>
   </main>
   <script>
-    // 1. УНИВЕРСАЛЬНЫЙ ПОКАЗ/СКРЫТИЕ ПАРОЛЯ (Вход и Регистрация)
+    // Константа для связи с FastAPI
+    const API_URL = 'http://127.0.0.1:8000';
+
+    // 1. УНИВЕРСАЛЬНЫЙ ПОКАЗ/СКРЫТИЕ ПАРОЛЯ
+    // Работает для всех полей, где есть кнопка .js-pw-toggle внутри .pw-wrapper
     document.querySelectorAll('.js-pw-toggle').forEach(btn => {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -244,24 +246,58 @@
       });
     });
 
-    // 2. ВАЛИДАЦИЯ И ПЕРЕХОД ДЛЯ ФОРМЫ ВХОДА
+    // 2. ЛОГИКА ВХОДА (LOGIN)
     const loginForm = document.querySelector('.auth-form--login');
-    loginForm.addEventListener('submit', (e) => {
+    
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (loginForm.checkValidity()) {
-        window.location.href = 'dashboard.html';
-      } else {
+
+      if (!loginForm.checkValidity()) {
         loginForm.reportValidity();
+        return;
+      }
+
+      // Собираем данные из полей
+      const emailInput = loginForm.querySelector('input[type="email"], input[type="text"]');
+      const passwordInput = loginForm.querySelector('input[type="password"]');
+
+      const loginData = {
+        email: emailInput.value.trim(),
+        password: passwordInput.value
+      };
+
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loginData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          // СОХРАНЯЕМ ТОКЕН (из Swagger: access_token)
+          localStorage.setItem('accessToken', result.access_token);
+          
+          // Редирект на дашборд (убедись, что путь верный относительно твоего сервера)
+          window.location.href = '/templates/citizen/dashboard.html'; 
+        } else {
+          const error = await response.json();
+          alert('Ошибка входа: ' + (error.detail || 'Неверный логин или пароль'));
+        }
+      } catch (err) {
+        console.error('Ошибка сети:', err);
+        alert('Не удалось подключиться к серверу бэкенда');
       }
     });
 
-    // 3. ВАЛИДАЦИЯ И ЛОГИКА ДЛЯ ФОРМЫ РЕГИСТРАЦИИ
+    // 3. ЛОГИКА РЕГИСТРАЦИИ (REGISTER)
     const regForm = document.querySelector('.auth-form--register');
     const pass = document.getElementById('register-password');
     const passConfirm = document.getElementById('register-password-confirm');
     const loginTabTrigger = document.getElementById('auth-mode-login');
 
-    // Функция проверки совпадения паролей
+    // Функция проверки совпадения паролей (живая валидация)
     function validatePassword() {
       if (pass.value !== passConfirm.value) {
         passConfirm.setCustomValidity("Пароли не совпадают");
@@ -271,17 +307,49 @@
     }
 
     if (pass && passConfirm) {
-      pass.addEventListener('change', validatePassword);
-      passConfirm.addEventListener('keyup', validatePassword);
+      pass.addEventListener('input', validatePassword);
+      passConfirm.addEventListener('input', validatePassword);
     }
 
-    regForm.addEventListener('submit', (e) => {
+    regForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (regForm.checkValidity()) {
-        alert('Регистрация прошла успешно! Теперь войдите в систему.');
-        loginTabTrigger.checked = true; // Переключаем на вкладку "Войти"
-      } else {
+
+      if (!regForm.checkValidity()) {
         regForm.reportValidity();
+        return;
+      }
+
+      // Обработка имени: бэкенд ждет first_name и last_name
+      const firstName = document.getElementById('register-first-name').value.trim();
+      const lastName = document.getElementById('register-last-name').value.trim();
+      const email = document.getElementById('register-email').value.trim();
+      const password = document.getElementById('register-password').value;
+
+      const userData = {
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        password: password
+      };
+
+      try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData)
+        });
+
+        if (response.ok) {
+          alert('Регистрация прошла успешно! Теперь войдите.');
+          loginTabTrigger.checked = true; // Авто-переключение на вкладку входа
+        } else {
+          const error = await response.json();
+          // Вывод ошибок валидации от FastAPI
+          alert('Ошибка регистрации: ' + JSON.stringify(error.detail));
+        }
+      } catch (err) {
+        console.error('Ошибка:', err);
+        alert('Ошибка при регистрации');
       }
     });
   </script>
