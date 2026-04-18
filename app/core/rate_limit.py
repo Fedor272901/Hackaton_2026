@@ -26,4 +26,4 @@ class RateLimiter:
         self.requests[user_id].append(now)
         return True
 
-rate_limiter = RateLimiter(max_requests=5, window_seconds=3600)
+rate_limiter = RateLimiter(max_requests=5, window_seconds=86400)

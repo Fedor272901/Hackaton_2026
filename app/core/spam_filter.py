@@ -64,3 +64,5 @@ class SpamFilter:
             return True, "Слишком много ссылок"
         
         return False, None
+    
+spam_filter = SpamFilter()

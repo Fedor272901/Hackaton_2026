@@ -25,7 +25,7 @@ from app.core.permissions import require_admin, require_admin_or_deputy, check_r
 
 #ЗАЩИТА ОТ СПАМА
 from app.core.rate_limit import rate_limiter
-from app.core.spam_filter import SpamFilter
+from app.core.spam_filter import spam_filter
 
 router = APIRouter()
 
@@ -68,7 +68,7 @@ def create_request(
     
     # ЗАЩИТА 2: Спам-фильтр
     full_text = f"{request_data.title} {request_data.description}"
-    is_spam, reason = SpamFilter.check(full_text)
+    is_spam, reason = spam_filter.check(full_text)
     if is_spam:
         raise HTTPException(
             status_code=400,
