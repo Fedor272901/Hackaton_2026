@@ -339,5 +339,72 @@
       </div>
     </div>
   </section>
+  <script>
+    const API_URL = 'http://127.0.0.1:8000';
+
+    // Функция для проверки авторизации и загрузки данных профиля
+    async function initDashboard() {
+      const token = localStorage.getItem('accessToken');
+
+      // 1. Проверка наличия токена
+      if (!token) {
+        console.warn('Доступ запрещен: отсутствует токен');
+        window.location.href = 'auth.html'; 
+        return;
+      }
+
+      try {
+        // 2. Запрос данных о пользователе (GET /users/me)
+        const response = await fetch(`${API_URL}/users/me`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          
+          // 3. Обновляем UI данными из базы
+          // Ищем элемент с именем (в твоем шаблоне это .profile-card__name)
+          const nameElement = document.querySelector('.profile-card__name');
+          if (nameElement) {
+            nameElement.textContent = `${userData.first_name} ${userData.last_name}`;
+          }
+
+          // Тут мы позже вызовем функцию загрузки обращений
+          // loadUserAppeals(); 
+
+        } else {
+          // Если токен невалиден или просрочен (401), удаляем его и уходим на логин
+          localStorage.removeItem('accessToken');
+          window.location.href = 'auth.html';
+        }
+      } catch (err) {
+        console.error('Ошибка при загрузке профиля:', err);
+      }
+    }
+
+    // Функция выхода
+    function logout() {
+      localStorage.removeItem('accessToken');
+      window.location.href = 'auth.html';
+    }
+
+    // Запуск при загрузке страницы
+    document.addEventListener('DOMContentLoaded', () => {
+      initDashboard();
+      
+      // Привязываем кнопку выхода, если она есть (например, в профиле)
+      const logoutBtn = document.querySelector('.profile-card__logout'); // замени на свой класс
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
+      }
+    });
+  </script>
 </body>
 </html>
