@@ -6,6 +6,7 @@ from typing import Optional, List
 
 from app.db.database import get_db
 from app.db.models import User, Request, Deputy
+from app.core.roles import Role
 from app.schemas.requests import (
     RequestCreate,
     RequestUpdate,
@@ -21,14 +22,21 @@ from app.schemas.requests import (
 from app.crud import request as request_crud
 from app.core.dependencies import get_current_active_user
 # ИСПОЛЬЗУЕМ ГОТОВЫЕ ПРОВЕРКИ ИЗ permissions.py
-from app.core.permissions import require_admin, require_admin_or_deputy, check_resource_access
+from app.core.permissions import require_admin, require_admin_or_deputy
+from app.core.access import can_view_request
 
-#ЗАЩИТА ОТ СПАМА
+# ЗАЩИТА ОТ СПАМА
 from app.core.rate_limit import rate_limiter
 from app.core.spam_filter import spam_filter
 
 router = APIRouter()
 
+
+def get_request_or_404(db: Session, request_id: int) -> Request:
+      request = request_crud.get_request_by_id(db, request_id)
+      if not request:
+          raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
+      return request
 
 # ---------------------------
 # Справочные эндпоинты (всем авторизованным)
@@ -56,7 +64,7 @@ def create_request(
 ):
     """
     Создать новое обращение
-    
+
     Доступно для всех авторизованных пользователей.
     """
     # ЗАЩИТА 1: Rate Limit (5 обращений в час)
@@ -65,7 +73,7 @@ def create_request(
             status_code=429,
             detail="Лимит исчерпан: максимум 5 обращений в сутки"
         )
-    
+
     # ЗАЩИТА 2: Спам-фильтр
     full_text = f"{request_data.title} {request_data.description}"
     is_spam, reason = spam_filter.check(full_text)
@@ -74,7 +82,7 @@ def create_request(
             status_code=400,
             detail=f"Обращение отклонено: {reason}"
         )
-    
+
     # ЗАЩИТА 3: Проверка дубликатов
     if request_crud.check_duplicate_request(db, current_user.id, request_data.title):
         raise HTTPException(
@@ -102,23 +110,26 @@ def get_requests_list(
 ):
     """
     Получить список обращений с фильтрацией и пагинацией
-    
+
     Права доступа:
     - Гражданин: только свои
     - Депутат: только своего района
     - Админ: все
     """
+
+
+
     # ФИЛЬТРАЦИЯ ПО РОЛИ
-    if current_user.role == "citizen":
+    if current_user.role == Role.CITIZEN:
         my_requests = True  # гражданин видит только свои
-    
+
     user_id = current_user.id if my_requests else None
-    
-    if current_user.role == "deputy" and not my_requests:
+
+    if current_user.role == Role.DEPUTY and not my_requests:
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
         if deputy:
             district_id = deputy.district_id  # депутат видит только свой район
-    
+
     return request_crud.get_requests(
         db=db,
         skip=skip,
@@ -158,21 +169,20 @@ def get_request_details(
 ):
     """
     Получить детальную информацию об обращении по ID
-    
+
     Права доступа:
     - Гражданин: только свои
     - Депутат: только своего района
     - Админ: все
     """
-    request = request_crud.get_request_by_id(db, request_id)
-    
-    if not request:
-        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
-    
+
+
+    request = get_request_or_404(db, request_id)
+
     # ИСПОЛЬЗУЕМ ГОТОВУЮ ПРОВЕРКУ ИЗ permissions.py
-    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+    if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "У вас нет прав для просмотра этого обращения")
-    
+
     return request
 
 
@@ -185,33 +195,31 @@ def update_request(
 ):
     """
     Обновить обращение
-    
+
     Права доступа:
     - Гражданин: только свои + только "новые" + нельзя менять статус
     - Депутат: только своего района
     - Админ: все
     """
-    request = request_crud.get_request_by_id(db, request_id)
-    
-    if not request:
-        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
-    
+
+    request = get_request_or_404(db, request_id)
+
     # ПРОВЕРКА ПРАВ
-    if current_user.role == "citizen":
+    if current_user.role == Role.CITIZEN:
         if request.user_id != current_user.id:
             raise HTTPException(403, "Вы можете редактировать только свои обращения")
         if request.status.code != "new":
             raise HTTPException(400, "Можно редактировать только новые обращения")
         if request_update.status_id is not None:
             raise HTTPException(403, "Вы не можете менять статус обращения")
-    
-    elif current_user.role == "deputy":
+
+    elif current_user.role == Role.DEPUTY:
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
         if not deputy or request.district_id != deputy.district_id:
             raise HTTPException(403, "Вы можете редактировать только обращения своего района")
-    
+
     # Админ - без ограничений
-    
+
     try:
         return request_crud.update_request(
             db, request_id, request_update, current_user.id
@@ -229,14 +237,12 @@ def assign_deputy_to_request(
 ):
     """
     Назначить депутата на обращение
-    
+
     Доступно только для администраторов.
     """
-    request = request_crud.get_request_by_id(db, request_id)
-    
-    if not request:
-        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
-    
+
+    request = get_request_or_404(db, request_id)
+
     try:
         return request_crud.assign_deputy(db, request_id, deputy_id, current_user.id)
     except ValueError as e:
@@ -251,7 +257,7 @@ def delete_request(
 ):
     """
     Удалить обращение
-    
+
     Доступно только для администраторов.
     """
     if not request_crud.delete_request(db, request_id):
@@ -270,15 +276,13 @@ def get_request_messages(
     current_user: User = Depends(get_current_active_user)
 ):
     """Получить сообщения по обращению"""
-    request = request_crud.get_request_by_id(db, request_id)
-    
-    if not request:
-        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
-    
+
+    request = get_request_or_404(db, request_id)
+
     # ГОТОВАЯ ПРОВЕРКА
-    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+    if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "У вас нет прав для просмотра сообщений")
-    
+
     result = request_crud.get_request_messages(db, request_id, skip, limit)
     return result["items"]
 
@@ -291,15 +295,13 @@ def add_message_to_request(
     current_user: User = Depends(get_current_active_user)
 ):
     """Добавить сообщение к обращению"""
-    request = request_crud.get_request_by_id(db, request_id)
-    
-    if not request:
-        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
-    
+
+    request = get_request_or_404(db, request_id)
+
     # ГОТОВАЯ ПРОВЕРКА
-    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+    if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "Вы не можете комментировать это обращение")
-    
+
     return request_crud.add_message_to_request(
         db, request_id, current_user.id, message_data.text
     )
@@ -315,15 +317,13 @@ def get_request_status_history(
     current_user: User = Depends(get_current_active_user)
 ):
     """Получить историю изменения статусов обращения"""
-    request = request_crud.get_request_by_id(db, request_id)
     
-    if not request:
-        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
-    
+    request = get_request_or_404(db, request_id)
+
     # ГОТОВАЯ ПРОВЕРКА
-    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+    if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "У вас нет прав для просмотра истории")
-    
+
     return request_crud.get_request_status_history(db, request_id)
 
 
@@ -338,14 +338,14 @@ def get_requests_statistics(
 ):
     """
     Получить статистику по обращениям
-    
+
     Доступно для администраторов и депутатов.
     Депутаты видят статистику только по своему району.
     """
-    if current_user.role == "deputy":
+    if current_user.role == Role.DEPUTY:
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
         if not deputy:
             raise HTTPException(403, "Депутат не привязан ни к одному району")
         district_id = deputy.district_id
-    
+
     return request_crud.get_statistics(db, district_id)

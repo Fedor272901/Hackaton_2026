@@ -1,229 +1,135 @@
 """
 Модуль для проверки прав доступа и ролей пользователей
 
+Здесь вся логика RBAC (roles & permissions)
+
+Роли:
+- CITIZEN  — обычный пользователь
+- DEPUTY   — депутат (работает с районом)
+- ADMIN    — администратор (управляет системой)
+- SUPERUSER — разработчик (имеет полный доступ, только для тестов)
+
 Использование:
     from app.core.permissions import require_role, require_admin, require_deputy
-    
+
     @router.post("/admin-only")
     def admin_endpoint(
         current_user: User = Depends(require_admin)
     ):
         return {"message": "Только админ видит это"}
 """
-from functools import wraps
-from typing import List, Optional, Callable
+
+# app/core/permissions.py
+"""
+Модуль для проверки прав доступа (интеграция с FastAPI)
+
+❗ ВАЖНО:
+- Используется ТОЛЬКО в Depends
+- НЕ содержит бизнес-логики
+- НЕ проверяет районы, ownership и т.д.
+
+Разделение:
+permissions.py → "кто пользователь?"
+access.py      → "что ему можно делать?"
+"""
+
+from typing import List
 from fastapi import HTTPException, Depends
-from sqlalchemy.orm import Session
 
-from app.db.database import get_db
-from app.db.models import User, Deputy
+from app.db.models import User
 from app.core.dependencies import get_current_active_user
+from app.core.roles import Role
 
 
-def require_role(allowed_roles: List[str]):
+# ========================
+# БАЗОВАЯ ПРОВЕРКА РОЛИ
+# ========================
+
+
+def has_role(user: User, allowed_roles: list[Role]) -> bool:
     """
-    Фабрика зависимостей для проверки роли пользователя
-    
-    Args:
-        allowed_roles: список разрешенных ролей (например, ["admin", "deputy"])
-    
-    Returns:
-        Функция-зависимость для FastAPI
-    
-    Пример:
-        @router.post("/protected")
-        def protected_endpoint(
-            current_user: User = Depends(require_role(["admin", "moderator"]))
-        ):
-            return {"message": f"Привет, {current_user.role}"}
+    Универсальная проверка ролей
+
+    Правила:
+    - SUPERUSER → всегда True
+    - остальные → только если входят в allowed_roles
     """
+
+    if user.role == Role.SUPERUSER:
+        return True
+
+    return user.role in allowed_roles
+
+
+# ========================
+# DEPENDS-ФАБРИКА
+# ========================
+
+
+def require_role(allowed_roles: List[Role]):
+    """
+    Фабрика зависимостей для FastAPI
+
+    Используется в роутерах:
+        current_user: User = Depends(require_role([...]))
+    """
+
     def role_checker(current_user: User = Depends(get_current_active_user)):
-        if current_user.role not in allowed_roles:
-            roles_text = ", ".join(allowed_roles)
+        if not has_role(current_user, allowed_roles):
+            roles_text = ", ".join([r.value for r in allowed_roles])
+
             raise HTTPException(
                 status_code=403,
-                detail=f"Доступ запрещен. Требуется одна из ролей: {roles_text}"
+                detail=f"Доступ запрещен. Требуется роль: {roles_text}",
             )
+
         return current_user
+
     return role_checker
 
 
-# Предопределенные проверки для удобства
-require_admin = require_role(["admin"])
-require_deputy = require_role(["deputy"])
-require_admin_or_deputy = require_role(["admin", "deputy"])
+# ========================
+# ГОТОВЫЕ ПРОВЕРКИ
+# ========================
+
+# Только админ
+require_admin = require_role([Role.ADMIN])
+
+# Только депутат
+require_deputy = require_role([Role.DEPUTY])
+
+# Админ ИЛИ депутат
+require_admin_or_deputy = require_role([Role.ADMIN, Role.DEPUTY])
+
+
+# ========================
+# OWNERSHIP (ОПЦИОНАЛЬНО)
+# ========================
 
 
 def require_ownership_or_admin(
     resource_owner_id: int,
-    error_message: str = "У вас нет прав для выполнения этого действия"
+    error_message: str = "У вас нет прав для выполнения этого действия",
 ):
     """
-    Проверка: пользователь является владельцем ресурса ИЛИ администратором
-    
-    Args:
-        resource_owner_id: ID владельца ресурса
-        error_message: сообщение при ошибке
-    
-    Пример:
-        @router.delete("/requests/{request_id}")
-        def delete_request(
-            request_id: int,
-            current_user: User = Depends(get_current_active_user),
-            db: Session = Depends(get_db)
-        ):
-            request = get_request(db, request_id)
-            
-            # Проверяем права
-            _ = require_ownership_or_admin(
-                request.user_id,
-                "Вы не можете удалить чужое обращение"
-            )(current_user)
-            
-            # Удаляем...
+    Проверка:
+    - владелец ресурса
+    - или ADMIN / SUPERUSER
+
+    Используется, когда не хочется писать отдельную проверку в access.py
     """
-    def ownership_checker(current_user: User = Depends(get_current_active_user)):
-        if current_user.role != "admin" and current_user.id != resource_owner_id:
+
+    def checker(current_user: User = Depends(get_current_active_user)):
+        if not (
+            current_user.id == resource_owner_id
+            or current_user.role in [Role.ADMIN, Role.SUPERUSER]
+        ):
             raise HTTPException(status_code=403, detail=error_message)
+
         return current_user
-    return ownership_checker
+
+    return checker
 
 
-def require_deputy_with_district(allowed_district_id: Optional[int] = None):
-    """
-    Проверка: пользователь - депутат И (опционально) привязан к определенному району
-    
-    Args:
-        allowed_district_id: ID разрешенного района (если None - любой район)
-    
-    Returns:
-        Объект Deputy
-    
-    Пример:
-        @router.post("/requests/{request_id}/process")
-        def process_request(
-            request_id: int,
-            deputy: Deputy = Depends(require_deputy_with_district()),
-            db: Session = Depends(get_db)
-        ):
-            # deputy - объект модели Deputy
-            return {"deputy_district": deputy.district_id}
-    """
-    def deputy_checker(
-        current_user: User = Depends(get_current_active_user),
-        db: Session = Depends(get_db)
-    ):
-        # Проверяем роль
-        if current_user.role != "deputy":
-            raise HTTPException(
-                status_code=403,
-                detail="Требуется роль депутата"
-            )
-        
-        # Получаем запись депутата
-        deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
-        
-        if not deputy:
-            raise HTTPException(
-                status_code=403,
-                detail="Депутат не привязан ни к одному району"
-            )
-        
-        # Проверяем район, если указан
-        if allowed_district_id is not None and deputy.district_id != allowed_district_id:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Это действие разрешено только для депутатов района #{allowed_district_id}"
-            )
-        
-        return deputy
-    return deputy_checker
-
-
-def check_resource_access(
-    user: User,
-    resource_owner_id: int,
-    resource_district_id: Optional[int] = None,
-    db: Optional[Session] = None
-) -> bool:
-    """
-    Проверка доступа к ресурсу (синхронная функция, не зависимость)
-    
-    Правила:
-    - Админ: доступ ко всему
-    - Гражданин: только к своим ресурсам
-    - Депутат: к ресурсам своего района
-    
-    Args:
-        user: пользователь
-        resource_owner_id: ID владельца ресурса
-        resource_district_id: ID района ресурса (для депутатов)
-        db: сессия БД (обязательно для депутатов)
-    
-    Returns:
-        True если доступ разрешен
-    
-    Пример:
-        if not check_resource_access(current_user, request.user_id, request.district_id, db):
-            raise HTTPException(403, "Доступ запрещен")
-    """
-    # Админ может всё
-    if user.role == "admin":
-        return True
-    
-    # Гражданин - только своё
-    if user.role == "citizen":
-        return user.id == resource_owner_id
-    
-    # Депутат - свой район
-    if user.role == "deputy":
-        if resource_district_id is None:
-            return False
-        
-        if db is None:
-            raise ValueError("Для проверки доступа депутата требуется сессия БД")
-        
-        deputy = db.query(Deputy).filter(Deputy.user_id == user.id).first()
-        return deputy is not None and deputy.district_id == resource_district_id
-    
-    return False
-
-
-# ==================== ДЕКОРАТОРЫ (альтернативный подход) ====================
-def roles_required(allowed_roles: List[str]):
-    """
-    Декоратор для проверки ролей (альтернатива Depends)
-    
-    ВНИМАНИЕ: В FastAPI рекомендуется использовать Depends вместо декораторов!
-    Декораторы хуже интегрируются с OpenAPI и автодокументацией.
-    
-    Пример:
-        @router.post("/legacy-endpoint")
-        @roles_required(["admin"])
-        def legacy_endpoint(current_user: User = Depends(get_current_active_user)):
-            return {"message": "Старый подход"}
-    """
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            # Ищем current_user в аргументах
-            current_user = kwargs.get('current_user')
-            if not current_user:
-                # Пробуем найти в позиционных аргументах
-                for arg in args:
-                    if isinstance(arg, User):
-                        current_user = arg
-                        break
-            
-            if not current_user:
-                raise HTTPException(500, "Не удалось найти пользователя в аргументах")
-            
-            if current_user.role not in allowed_roles:
-                raise HTTPException(
-                    403,
-                    f"Требуется роль: {', '.join(allowed_roles)}"
-                )
-            
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
+# ВРЕМЕННАЯ СОВМЕСТИМОСТЬ (чтобы не ломать старый код)
+from app.core.access import can_view_request as check_resource_access
