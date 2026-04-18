@@ -1622,3 +1622,39 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
   align-items: center;
   justify-content: center;
 }
+
+.empty-state-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 1rem;
+  background: var(--color-white);
+  border-radius: 1rem;
+  border: 2px dashed var(--color-slate-200);
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.empty-state__title {
+  font-size: 2.5rem; /* Большие буквы */
+  font-weight: 800;
+  color: var(--color-slate-950); 
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+.empty-state__text {
+  color: var(--color-slate-500);
+  max-width: 400px;
+  margin: 0 auto 2rem;
+  line-height: 1.5;
+}
+
+/* Маленькая кнопка */
+.button--small {
+  display: inline-flex;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.9rem;
+  width: auto; /* Чтобы не растягивалась на всю ширину */
+}
