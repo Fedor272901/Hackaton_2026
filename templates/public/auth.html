@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Авторизация гражданина в портале подачи обращений к местным депутатам.">
   <title>Портал обращений депутатам — Авторизация</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body class="auth-page">
   <!-- CSS-only переключение между входом и регистрацией -->
@@ -91,7 +91,7 @@
         </div>
 
         <div class="auth-forms">
-          <form class="auth-form auth-form--login" action="dashboard.html" method="get">
+          <form class="auth-form auth-form--login" action="/templates/citizen/dashboard.html" method="get">
             <div class="auth-form__body">
               <div class="form__field">
                 <label class="form__label" for="login-identity">Email</label>
@@ -249,7 +249,7 @@
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       if (loginForm.checkValidity()) {
-        window.location.href = 'dashboard.html';
+        window.location.href = '/templates/citizen/dashboard.html';
       } else {
         loginForm.reportValidity();
       }
