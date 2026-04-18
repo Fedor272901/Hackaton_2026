@@ -1,7 +1,8 @@
+# app/api/v1/endpoints/requests.py
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from datetime import datetime
 
 from app.db.database import get_db
 from app.db.models import User, Request, Deputy
@@ -18,35 +19,30 @@ from app.schemas.requests import (
     StatisticsResponse
 )
 from app.crud import request as request_crud
-from app.core.dependencies import get_current_user, get_current_active_user
-from app.core.permissions import require_role
-from app.core.rate_limit import RateLimiter
+from app.core.dependencies import get_current_active_user
+# ИСПОЛЬЗУЕМ ГОТОВЫЕ ПРОВЕРКИ ИЗ permissions.py
+from app.core.permissions import require_admin, require_admin_or_deputy, check_resource_access
+
+#ЗАЩИТА ОТ СПАМА
+from app.core.rate_limit import rate_limiter
 from app.core.spam_filter import SpamFilter
 
 router = APIRouter()
 
 
-
-
 # ---------------------------
-# Справочные эндпоинты
+# Справочные эндпоинты (всем авторизованным)
 # ---------------------------
 @router.get("/statuses", response_model=List[RequestStatusResponse])
 def get_statuses(db: Session = Depends(get_db)):
-    """
-    Получить список всех возможных статусов обращений
-    """
-    statuses = request_crud.get_request_statuses(db)
-    return statuses
+    """Получить список всех возможных статусов обращений"""
+    return request_crud.get_request_statuses(db)
 
 
 @router.get("/categories", response_model=List[RequestCategoryResponse])
 def get_categories(db: Session = Depends(get_db)):
-    """
-    Получить список всех категорий обращений
-    """
-    categories = request_crud.get_request_categories(db)
-    return categories
+    """Получить список всех категорий обращений"""
+    return request_crud.get_request_categories(db)
 
 
 # ---------------------------
@@ -62,21 +58,11 @@ def create_request(
     Создать новое обращение
     
     Доступно для всех авторизованных пользователей.
-    
-    - **title**: заголовок обращения
-    - **description**: подробное описание проблемы
-    - **district_id**: ID района, к которому относится обращение
-    - **category_id**: ID категории обращения
-    - **address**: физический адрес (опционально)
-    - **latitude**: широта для карты (опционально)
-    - **longitude**: долгота для карты (опционально)
-    - **photo_urls**: список URL загруженных фотографий (опционально)
     """
-
-     # ЗАЩИТА 1: Rate Limit (5 обращений в час)
-    if not RateLimiter.check(current_user.id):
+    # ЗАЩИТА 1: Rate Limit (5 обращений в час)
+    if not rate_limiter.check(current_user.id):
         raise HTTPException(
-            status_code=429, 
+            status_code=429,
             detail="Лимит исчерпан: максимум 5 обращений в сутки"
         )
     
@@ -85,64 +71,55 @@ def create_request(
     is_spam, reason = SpamFilter.check(full_text)
     if is_spam:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Обращение отклонено: {reason}"
         )
     
     # ЗАЩИТА 3: Проверка дубликатов
     if request_crud.check_duplicate_request(db, current_user.id, request_data.title):
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail="Похожее обращение уже было отправлено недавно"
         )
 
     try:
-        new_request = request_crud.create_request(
-            db=db,
-            request_data=request_data,
-            user_id=current_user.id
-        )
-        return new_request
+        return request_crud.create_request(db, request_data, current_user.id)
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Ошибка при создании обращения: {str(e)}"
-        )
+        raise HTTPException(400, f"Ошибка при создании обращения: {str(e)}")
 
 
 @router.get("/", response_model=RequestListResponse)
 def get_requests_list(
-    skip: int = Query(0, ge=0, description="Сколько записей пропустить"),
-    limit: int = Query(20, ge=1, le=100, description="Максимальное количество записей"),
-    district_id: Optional[int] = Query(None, description="Фильтр по ID района"),
-    category_id: Optional[int] = Query(None, description="Фильтр по ID категории"),
-    status_id: Optional[int] = Query(None, description="Фильтр по ID статуса"),
-    my_requests: bool = Query(False, description="Показать только мои обращения"),
-    include_closed: bool = Query(True, description="Включать закрытые обращения"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    district_id: Optional[int] = None,
+    category_id: Optional[int] = None,
+    status_id: Optional[int] = None,
+    my_requests: bool = False,
+    include_closed: bool = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """
     Получить список обращений с фильтрацией и пагинацией
     
-    Доступно для всех авторизованных пользователей.
-    
-    Фильтры:
-    - **district_id**: показать обращения только из указанного района
-    - **category_id**: показать обращения только указанной категории
-    - **status_id**: показать обращения только с указанным статусом
-    - **my_requests**: если true, показывает только обращения текущего пользователя
-    - **include_closed**: если false, исключает закрытые обращения
+    Права доступа:
+    - Гражданин: только свои
+    - Депутат: только своего района
+    - Админ: все
     """
+    # ФИЛЬТРАЦИЯ ПО РОЛИ
+    if current_user.role == "citizen":
+        my_requests = True  # гражданин видит только свои
+    
     user_id = current_user.id if my_requests else None
     
-    # Если пользователь - депутат, он может видеть обращения своего района
     if current_user.role == "deputy" and not my_requests:
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
-        if deputy and not district_id:
-            district_id = deputy.district_id
+        if deputy:
+            district_id = deputy.district_id  # депутат видит только свой район
     
-    result = request_crud.get_requests(
+    return request_crud.get_requests(
         db=db,
         skip=skip,
         limit=limit,
@@ -152,8 +129,6 @@ def get_requests_list(
         status_id=status_id,
         include_closed=include_closed
     )
-    
-    return result
 
 
 @router.get("/my", response_model=List[RequestResponse])
@@ -164,11 +139,7 @@ def get_my_requests(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """
-    Получить список обращений текущего пользователя
-    
-    Упрощенный эндпоинт для получения своих обращений.
-    """
+    """Получить список обращений текущего пользователя"""
     result = request_crud.get_requests(
         db=db,
         skip=skip,
@@ -176,53 +147,31 @@ def get_my_requests(
         user_id=current_user.id,
         include_closed=include_closed
     )
-    
     return result["items"]
 
 
 @router.get("/{request_id}", response_model=RequestResponse)
 def get_request_details(
-    request_id: int = Path(..., ge=1, description="ID обращения"),
+    request_id: int = Path(..., ge=1),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """
     Получить детальную информацию об обращении по ID
     
-    Доступно для всех авторизованных пользователей.
-    
-    Включает:
-    - Основную информацию об обращении
-    - Данные автора
-    - Данные района и категории
-    - Текущий статус
-    - Назначенного депутата (если есть)
-    - Прикрепленные фотографии
+    Права доступа:
+    - Гражданин: только свои
+    - Депутат: только своего района
+    - Админ: все
     """
     request = request_crud.get_request_by_id(db, request_id)
     
     if not request:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Обращение с ID {request_id} не найдено"
-        )
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
     
-    # Проверка прав доступа
-    # Гражданин может видеть только свои обращения
-    if current_user.role == "citizen" and request.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="У вас нет прав для просмотра этого обращения"
-        )
-    
-    # Депутат может видеть только обращения своего района
-    if current_user.role == "deputy":
-        deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
-        if deputy and request.district_id != deputy.district_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Вы можете просматривать только обращения своего района"
-            )
+    # ИСПОЛЬЗУЕМ ГОТОВУЮ ПРОВЕРКУ ИЗ permissions.py
+    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+        raise HTTPException(403, "У вас нет прав для просмотра этого обращения")
     
     return request
 
@@ -235,77 +184,40 @@ def update_request(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Обновить обращение (статус, назначенного депутата и т.д.)
+    Обновить обращение
     
-    Доступно для:
-    - Администраторов: полный доступ
-    - Депутатов: могут менять статус обращений в своем районе
-    - Граждан: могут обновлять описание только своих обращений в статусе "новое"
-    
-    Поля для обновления:
-    - **status_id**: новый статус обращения
-    - **title**: новый заголовок
-    - **description**: новое описание
-    - **category_id**: новая категория
-    - **address**: новый адрес
+    Права доступа:
+    - Гражданин: только свои + только "новые" + нельзя менять статус
+    - Депутат: только своего района
+    - Админ: все
     """
     request = request_crud.get_request_by_id(db, request_id)
     
     if not request:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Обращение с ID {request_id} не найдено"
-        )
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
     
-    # Проверка прав на обновление
+    # ПРОВЕРКА ПРАВ
     if current_user.role == "citizen":
-        # Граждане могут обновлять только свои обращения
         if request.user_id != current_user.id:
-            raise HTTPException(
-                status_code=403,
-                detail="Вы можете редактировать только свои обращения"
-            )
-        
-        # И только если обращение в статусе "новое"
+            raise HTTPException(403, "Вы можете редактировать только свои обращения")
         if request.status.code != "new":
-            raise HTTPException(
-                status_code=400,
-                detail="Можно редактировать только новые обращения"
-            )
-        
-        # Граждане не могут менять статус
+            raise HTTPException(400, "Можно редактировать только новые обращения")
         if request_update.status_id is not None:
-            raise HTTPException(
-                status_code=403,
-                detail="У вас нет прав для изменения статуса обращения"
-            )
+            raise HTTPException(403, "Вы не можете менять статус обращения")
     
     elif current_user.role == "deputy":
-        # Депутаты могут обновлять только обращения своего района
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
         if not deputy or request.district_id != deputy.district_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Вы можете редактировать только обращения своего района"
-            )
+            raise HTTPException(403, "Вы можете редактировать только обращения своего района")
     
-    # Администраторы могут всё
+    # Админ - без ограничений
     
     try:
-        updated_request = request_crud.update_request(
-            db=db,
-            request_id=request_id,
-            request_update=request_update,
-            changed_by_user_id=current_user.id
+        return request_crud.update_request(
+            db, request_id, request_update, current_user.id
         )
-        return updated_request
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка при обновлении обращения: {str(e)}"
-        )
+        raise HTTPException(400, str(e))
 
 
 @router.post("/{request_id}/assign/{deputy_id}", response_model=RequestResponse)
@@ -313,57 +225,37 @@ def assign_deputy_to_request(
     request_id: int,
     deputy_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["admin"]))
+    current_user: User = Depends(require_admin)  # ТОЛЬКО АДМИН
 ):
     """
     Назначить депутата на обращение
     
     Доступно только для администраторов.
-    
-    - **request_id**: ID обращения
-    - **deputy_id**: ID депутата (должен быть привязан к тому же району)
     """
     request = request_crud.get_request_by_id(db, request_id)
     
     if not request:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Обращение с ID {request_id} не найдено"
-        )
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
     
     try:
-        updated_request = request_crud.assign_deputy(
-            db=db,
-            request_id=request_id,
-            deputy_id=deputy_id,
-            assigned_by_user_id=current_user.id
-        )
-        return updated_request
+        return request_crud.assign_deputy(db, request_id, deputy_id, current_user.id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(400, str(e))
 
 
 @router.delete("/{request_id}", status_code=204)
 def delete_request(
     request_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(["admin"]))
+    current_user: User = Depends(require_admin)  # ТОЛЬКО АДМИН
 ):
     """
     Удалить обращение
     
     Доступно только для администраторов.
-    ВНИМАНИЕ: Удаление безвозвратно удаляет обращение и все связанные данные!
     """
-    success = request_crud.delete_request(db, request_id)
-    
-    if not success:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Обращение с ID {request_id} не найдено"
-        )
-    
-    return None
+    if not request_crud.delete_request(db, request_id):
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
 
 
 # ---------------------------
@@ -377,25 +269,15 @@ def get_request_messages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """
-    Получить сообщения по обращению
-    
-    Доступно для всех, у кого есть доступ к обращению.
-    """
+    """Получить сообщения по обращению"""
     request = request_crud.get_request_by_id(db, request_id)
     
     if not request:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Обращение с ID {request_id} не найдено"
-        )
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
     
-    # Проверка прав доступа (аналогично просмотру обращения)
-    if current_user.role == "citizen" and request.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="У вас нет прав для просмотра сообщений этого обращения"
-        )
+    # ГОТОВАЯ ПРОВЕРКА
+    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+        raise HTTPException(403, "У вас нет прав для просмотра сообщений")
     
     result = request_crud.get_request_messages(db, request_id, skip, limit)
     return result["items"]
@@ -408,43 +290,19 @@ def add_message_to_request(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """
-    Добавить сообщение к обращению
-    
-    Доступно для всех, у кого есть доступ к обращению.
-    """
+    """Добавить сообщение к обращению"""
     request = request_crud.get_request_by_id(db, request_id)
     
     if not request:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Обращение с ID {request_id} не найдено"
-        )
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
     
-    # Проверка прав доступа
-    if current_user.role == "citizen" and request.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="Вы можете комментировать только свои обращения"
-        )
+    # ГОТОВАЯ ПРОВЕРКА
+    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+        raise HTTPException(403, "Вы не можете комментировать это обращение")
     
-    elif current_user.role == "deputy":
-        deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
-        if not deputy or request.district_id != deputy.district_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Вы можете комментировать только обращения своего района"
-            )
-    
-    message = request_crud.add_message_to_request(
-        db=db,
-        request_id=request_id,
-        user_id=current_user.id,
-        text=message_data.text,
-        is_system=False
+    return request_crud.add_message_to_request(
+        db, request_id, current_user.id, message_data.text
     )
-    
-    return message
 
 
 # ---------------------------
@@ -456,28 +314,17 @@ def get_request_status_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """
-    Получить историю изменения статусов обращения
-    
-    Доступно для всех, у кого есть доступ к обращению.
-    """
+    """Получить историю изменения статусов обращения"""
     request = request_crud.get_request_by_id(db, request_id)
     
     if not request:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Обращение с ID {request_id} не найдено"
-        )
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
     
-    # Проверка прав доступа
-    if current_user.role == "citizen" and request.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403,
-            detail="У вас нет прав для просмотра истории этого обращения"
-        )
+    # ГОТОВАЯ ПРОВЕРКА
+    if not check_resource_access(current_user, request.user_id, request.district_id, db):
+        raise HTTPException(403, "У вас нет прав для просмотра истории")
     
-    history = request_crud.get_request_status_history(db, request_id)
-    return history
+    return request_crud.get_request_status_history(db, request_id)
 
 
 # ---------------------------
@@ -485,9 +332,9 @@ def get_request_status_history(
 # ---------------------------
 @router.get("/statistics/summary", response_model=StatisticsResponse)
 def get_requests_statistics(
-    district_id: Optional[int] = Query(None, description="Фильтр по ID района"),
+    district_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_admin_or_deputy)  # АДМИН ИЛИ ДЕПУТАТ
 ):
     """
     Получить статистику по обращениям
@@ -495,22 +342,10 @@ def get_requests_statistics(
     Доступно для администраторов и депутатов.
     Депутаты видят статистику только по своему району.
     """
-    # Депутаты видят статистику только своего района
     if current_user.role == "deputy":
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
-        if deputy:
-            district_id = deputy.district_id
-        else:
-            raise HTTPException(
-                status_code=403,
-                detail="Депутат не привязан ни к одному району"
-            )
+        if not deputy:
+            raise HTTPException(403, "Депутат не привязан ни к одному району")
+        district_id = deputy.district_id
     
-    elif current_user.role == "citizen":
-        raise HTTPException(
-            status_code=403,
-            detail="Статистика доступна только администраторам и депутатам"
-        )
-    
-    stats = request_crud.get_statistics(db, district_id)
-    return stats
+    return request_crud.get_statistics(db, district_id)
