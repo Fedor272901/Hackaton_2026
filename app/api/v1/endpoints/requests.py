@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
+from app.core.config import SECRET_KEY, ALGORITHM
 from app.db.database import get_db
 from app.db.models import User, Request, Deputy
 from app.core.roles import Role
@@ -28,6 +29,8 @@ from app.core.access import can_view_request
 # ЗАЩИТА ОТ СПАМА
 from app.core.rate_limit import rate_limiter
 from app.core.spam_filter import spam_filter
+
+
 
 router = APIRouter()
 
