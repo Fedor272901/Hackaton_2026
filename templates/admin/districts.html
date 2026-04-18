@@ -1,2 +1,200 @@
-<!--Districts Management
-Редактор границ округов: карта с инструментами рисования полигонов/загрузки GeoJSON, список округов, выбор депутата для привязки, сохранение геометрии в БД.-->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Редактор границ избирательных округов: карта, полигоны, GeoJSON, привязка депутатов.">
+  <title>Портал обращений — Управление округами</title>
+  <link rel="stylesheet" href="/static/css/styleadmin.css">
+</head>
+<body class="admin-dashboard">
+  <!-- Шапка админ-панели -->
+  <header class="admin-header">
+    <div class="admin-header__brand">
+      <div class="admin-header__logo" aria-hidden="true">АД</div>
+      <div>
+        <h1 class="admin-header__title">Административная панель</h1>
+        <p class="admin-header__subtitle">Управление системой обращений</p>
+      </div>
+    </div>
+
+    <nav class="admin-nav" aria-label="Навигация по админ-панели">
+      <a href="dashboard.html" class="admin-nav__link">Главная</a>
+      <a href="deputies.html" class="admin-nav__link">Депутаты</a>
+      <a href="districts.html" class="admin-nav__link active">Округа</a>
+      <a href="moderation.html" class="admin-nav__link">Модерация</a>
+      <a href="statistics.html" class="admin-nav__link">Статистика</a>
+    </nav>
+
+    <div class="admin-header__profile">
+      <div class="admin-header__user">
+        <div class="admin-header__avatar" aria-hidden="true">АИ</div>
+        <div>
+          <p class="admin-header__name">АДМИНИСТРАТОР</p>
+          <p class="admin-header__role">Суперпользователь</p>
+        </div>
+      </div>
+      <a class="action-btn action-btn--secondary action-btn--sm" href="../public/auth.html">Выйти</a>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="admin-main">
+    <!-- Герой-секция -->
+    <section class="admin-hero">
+      <div class="admin-hero__content">
+        <p class="section-card__eyebrow">Редактор округов</p>
+        <h1>Границы избирательных округов</h1>
+        <p class="admin-hero__text">Интерактивная карта с инструментами рисования полигонов, загрузка GeoJSON, привязка депутатов к округам.</p>
+      </div>
+    </section>
+
+    <!-- Редактор карты -->
+    <section class="admin-section">
+      <div class="admin-section__header">
+        <h2 class="admin-section__title">Карта округов</h2>
+        <div class="admin-section__actions">
+          <button class="action-btn action-btn--secondary action-btn--sm">📤 Экспорт GeoJSON</button>
+          <button class="action-btn action-btn--secondary action-btn--sm">📥 Импорт GeoJSON</button>
+          <button class="action-btn action-btn--primary action-btn--sm">💾 Сохранить изменения</button>
+        </div>
+      </div>
+      <div class="admin-section__content">
+        <div class="map-editor">
+          <!-- Карта с инструментами -->
+          <div class="map-container">
+            <div class="map-toolbar">
+              <button class="map-tool" title="Перемещение" aria-label="Инструмент перемещения">✋</button>
+              <button class="map-tool active" title="Рисование полигона" aria-label="Инструмент рисования полигона">✏️</button>
+              <button class="map-tool" title="Добавить точку" aria-label="Добавить вершину">➕</button>
+              <button class="map-tool" title="Удалить полигон" aria-label="Удалить выбранный полигон">🗑️</button>
+              <button class="map-tool" title="Отменить действие" aria-label="Отменить">↩️</button>
+            </div>
+            <div class="map-placeholder" role="img" aria-label="Интерактивная карта с границами округов">
+              <div style="text-align: center;">
+                <p style="font-size: 3rem; margin-bottom: 1rem;">🗺️</p>
+                <p>Интерактивная карта</p>
+                <p style="font-size: 0.875rem; color: #94a3b8;">Здесь будет отображена карта с границами округов</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Панель округов -->
+          <aside class="district-panel">
+            <h3 class="district-panel__title">Список округов</h3>
+            
+            <div class="form-group">
+              <label class="form-label" for="new-district-name">Новый округ</label>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="new-district-name" class="form-input" placeholder="Название округа...">
+                <button class="action-btn action-btn--primary action-btn--sm">+</button>
+              </div>
+            </div>
+
+            <div class="district-list">
+              <div class="district-item selected">
+                <div class="district-item__color" style="background: #3b82f6;" aria-hidden="true"></div>
+                <div class="district-item__info">
+                  <p class="district-item__name">Округ №1</p>
+                  <p class="district-item__deputy">Депутат: Сидоров А.П.</p>
+                </div>
+                <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+              </div>
+
+              <div class="district-item">
+                <div class="district-item__color" style="background: #22c55e;" aria-hidden="true"></div>
+                <div class="district-item__info">
+                  <p class="district-item__name">Округ №2</p>
+                  <p class="district-item__deputy">Депутат: не назначен</p>
+                </div>
+                <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+              </div>
+
+              <div class="district-item">
+                <div class="district-item__color" style="background: #f59e0b;" aria-hidden="true"></div>
+                <div class="district-item__info">
+                  <p class="district-item__name">Округ №3</p>
+                  <p class="district-item__deputy">Депутат: Иванов И.И.</p>
+                </div>
+                <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+              </div>
+
+              <div class="district-item">
+                <div class="district-item__color" style="background: #ef4444;" aria-hidden="true"></div>
+                <div class="district-item__info">
+                  <p class="district-item__name">Округ №4</p>
+                  <p class="district-item__deputy">Депутат: не назначен</p>
+                </div>
+                <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+              </div>
+
+              <div class="district-item">
+                <div class="district-item__color" style="background: #8b5cf6;" aria-hidden="true"></div>
+                <div class="district-item__info">
+                  <p class="district-item__name">Округ №5</p>
+                  <p class="district-item__deputy">Депутат: Петрова М.С.</p>
+                </div>
+                <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- Модальное окно редактирования округа -->
+    <section class="admin-modal" id="edit-district-modal" aria-labelledby="edit-district-title">
+      <div class="admin-modal__dialog">
+        <div class="admin-modal__header">
+          <div>
+            <h2 class="admin-modal__title" id="edit-district-title">Редактирование округа</h2>
+            <p class="admin-modal__subtitle">Округ №1</p>
+          </div>
+          <button class="admin-modal__close" aria-label="Закрыть">×</button>
+        </div>
+
+        <div class="admin-modal__content">
+          <div class="form-group">
+            <label class="form-label" for="district-name">Название округа</label>
+            <input type="text" id="district-name" class="form-input" value="Округ №1">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="district-deputy">Прикреплённый депутат</label>
+            <select id="district-deputy" class="form-select">
+              <option value="">Не назначен</option>
+              <option value="1" selected>Сидоров Алексей Петрович</option>
+              <option value="2">Иванов Иван Иванович</option>
+              <option value="3">Петрова Мария Сергеевна</option>
+              <option value="4">Козлова Елена Владимировна</option>
+            </select>
+            <p class="form-hint">Депутат, представляющий данный округ</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="district-color">Цвет на карте</label>
+            <input type="color" id="district-color" class="form-input" value="#3b82f6" style="height: 50px; padding: 0.25rem;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Информация о полигоне</label>
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.875rem;">
+              <p>Вершин: 12</p>
+              <p>Площадь: ~2.5 км²</p>
+              <p>GeoJSON: { "type": "Polygon", ... }</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-modal__footer">
+          <button class="action-btn action-btn--danger">Удалить округ</button>
+          <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+            <button class="action-btn action-btn--secondary">Отмена</button>
+            <button class="action-btn action-btn--primary">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
