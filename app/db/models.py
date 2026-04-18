@@ -27,7 +27,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     role = Column(
-        Enum("citizen", "deputy", "admin", name="user_roles"),
+        Enum("citizen", "deputy", "admin", "superuser", name="user_roles"),
         nullable=False,
         index=True
     )  # citizen / deputy / admin
