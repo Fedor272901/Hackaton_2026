@@ -1736,3 +1736,4 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
     visibility: visible !important;
     pointer-events: auto !important;
 }
+
