@@ -91,7 +91,7 @@
         </div>
 
         <div class="auth-forms">
-          <form class="auth-form auth-form--login" action="/templates/citizen/dashboard.html" method="get">
+          <form class="auth-form auth-form--login" action="citizen/dashboard.html" method="get">
             <div class="auth-form__body">
               <div class="form__field">
                 <label class="form__label" for="login-identity">Email</label>
@@ -280,7 +280,7 @@
           localStorage.setItem('accessToken', result.access_token);
           
           // Редирект на дашборд (убедись, что путь верный относительно твоего сервера)
-          window.location.href = '/templates/citizen/dashboard.html'; 
+          window.location.href = 'citizen/dashboard'; 
         } else {
           const error = await response.json();
           alert('Ошибка входа: ' + (error.detail || 'Неверный логин или пароль'));
