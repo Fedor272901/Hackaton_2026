@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Глобальная статистика портала: аналитика по округам, сравнение эффективности, экспорт данных.">
+  <title>Портал обращений — Глобальная статистика</title>
+  <link rel="stylesheet" href="/static/css/styleadmin.css">
+</head>
+<body class="admin-dashboard">
+  <!-- Шапка админ-панели -->
+  <header class="admin-header">
+    <div class="admin-header__brand">
+      <div class="admin-header__logo" aria-hidden="true">АД</div>
+      <div>
+        <h1 class="admin-header__title">Административная панель</h1>
+        <p class="admin-header__subtitle">Управление системой обращений</p>
+      </div>
+    </div>
+
+    <nav class="admin-nav" aria-label="Навигация по админ-панели">
+      <a href="dashboard" class="admin-nav__link">Главная</a>
+      <a href="deputies" class="admin-nav__link">Депутаты</a>
+      <a href="districts" class="admin-nav__link">Округа</a>
+      <a href="moderation" class="admin-nav__link">Модерация</a>
+      <a href="statistics" class="admin-nav__link active">Статистика</a>
+    </nav>
+
+    <div class="admin-header__profile">
+      <div class="admin-header__user">
+        <div class="admin-header__avatar" aria-hidden="true">АИ</div>
+        <div>
+          <p class="admin-header__name">АДМИНИСТРАТОР</p>
+          <p class="admin-header__role">Суперпользователь</p>
+        </div>
+      </div>
+      <a class="action-btn action-btn--secondary action-btn--sm" href="../public/auth">Выйти</a>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="admin-main">
+    <!-- Герой-секция -->
+    <section class="admin-hero">
+      <div class="admin-hero__content">
+        <p class="section-card__eyebrow">Аналитика системы</p>
+        <h1>Глобальная статистика</h1>
+        <p class="admin-hero__text">Сравнение эффективности округов, агрегированные графики, сводные таблицы, экспорт CSV/PDF.</p>
+      </div>
+      <div class="admin-section__actions">
+        <button class="action-btn action-btn--secondary action-btn--sm">📥 Экспорт CSV</button>
+        <button class="action-btn action-btn--secondary action-btn--sm">📄 Экспорт PDF</button>
+      </div>
+    </section>
+
+    <!-- Фильтры периода -->
+    <section class="admin-section">
+      <div class="admin-section__content">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+          <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+            <label class="form-label" for="period-start">Период с</label>
+            <input type="date" id="period-start" class="form-input" value="2025-01-01">
+          </div>
+          <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+            <label class="form-label" for="period-end">по</label>
+            <input type="date" id="period-end" class="form-input" value="2025-01-31">
+          </div>
+          <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+            <label class="form-label" for="filter-district">Округ</label>
+            <select id="filter-district" class="form-select">
+              <option value="">Все округа</option>
+              <option value="1">Округ №1</option>
+              <option value="2">Округ №2</option>
+              <option value="3">Округ №3</option>
+              <option value="4">Округ №4</option>
+              <option value="5">Округ №5</option>
+            </select>
+          </div>
+          <button class="action-btn action-btn--primary">Применить фильтры</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Сводные показатели -->
+    <section class="admin-stats-grid" aria-label="Общие показатели системы">
+      <article class="admin-stat-card admin-stat-card--info">
+        <p class="admin-stat-card__value">1,247</p>
+        <p class="admin-stat-card__label">Всего обращений</p>
+        <span class="admin-stat-card__trend admin-stat-card__trend--up">↑ 124 за период</span>
+      </article>
+
+      <article class="admin-stat-card admin-stat-card--success">
+        <p class="admin-stat-card__value">892</p>
+        <p class="admin-stat-card__label">Решено проблем</p>
+        <span class="admin-stat-card__trend admin-stat-card__trend--up">↑ 71% решений</span>
+      </article>
+
+      <article class="admin-stat-card admin-stat-card--pending">
+        <p class="admin-stat-card__value">14.2 дня</p>
+        <p class="admin-stat-card__label">Среднее время решения</p>
+        <span class="admin-stat-card__trend admin-stat-card__trend--down">↓ 2.3 дня к прошлому месяцу</span>
+      </article>
+
+      <article class="admin-stat-card admin-stat-card--info">
+        <p class="admin-stat-card__value">4.2/5</p>
+        <p class="admin-stat-card__label">Средняя удовлетворённость</p>
+        <span class="admin-stat-card__trend admin-stat-card__trend--up">↑ 0.3 к прошлому месяцу</span>
+      </article>
+    </section>
+
+    <!-- Графики -->
+    <section class="charts-grid">
+      <article class="chart-card">
+        <p class="chart-card__title">Динамика обращений по месяцам</p>
+        <div class="chart-placeholder chart-placeholder--bar" role="img" aria-label="Гистограмма динамики обращений по месяцам">
+          <span class="chart-placeholder__bar" style="height: 45%"></span>
+          <span class="chart-placeholder__bar" style="height: 60%"></span>
+          <span class="chart-placeholder__bar" style="height: 55%"></span>
+          <span class="chart-placeholder__bar" style="height: 80%"></span>
+          <span class="chart-placeholder__bar" style="height: 70%"></span>
+          <span class="chart-placeholder__bar" style="height: 90%"></span>
+          <span class="chart-placeholder__bar" style="height: 65%"></span>
+        </div>
+      </article>
+
+      <article class="chart-card">
+        <p class="chart-card__title">Обращения по категориям</p>
+        <div class="chart-placeholder chart-placeholder--bars-horizontal" role="img" aria-label="Горизонтальная гистограмма по категориям">
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">ЖКХ</span>
+            <span class="chart-placeholder__bar-fill" style="width: 85%"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Дороги</span>
+            <span class="chart-placeholder__bar-fill" style="width: 65%"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Благоустройство</span>
+            <span class="chart-placeholder__bar-fill" style="width: 45%"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Транспорт</span>
+            <span class="chart-placeholder__bar-fill" style="width: 30%"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Другое</span>
+            <span class="chart-placeholder__bar-fill" style="width: 20%"></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chart-card">
+        <p class="chart-card__title">Эффективность округов (% решённых)</p>
+        <div class="chart-placeholder chart-placeholder--bars-horizontal" role="img" aria-label="Гистограмма эффективности округов">
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Округ №1</span>
+            <span class="chart-placeholder__bar-fill" style="width: 92%; background: linear-gradient(to right, #22c55e, #4ade80);"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Округ №2</span>
+            <span class="chart-placeholder__bar-fill" style="width: 78%; background: linear-gradient(to right, #84cc16, #a3e635);"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Округ №3</span>
+            <span class="chart-placeholder__bar-fill" style="width: 85%; background: linear-gradient(to right, #22c55e, #4ade80);"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Округ №4</span>
+            <span class="chart-placeholder__bar-fill" style="width: 65%; background: linear-gradient(to right, #f59e0b, #fbbf24);"></span>
+          </div>
+          <div class="chart-placeholder__bar-row">
+            <span class="chart-placeholder__bar-label">Округ №5</span>
+            <span class="chart-placeholder__bar-fill" style="width: 71%; background: linear-gradient(to right, #84cc16, #a3e635);"></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="chart-card">
+        <p class="chart-card__title">Статусы обращений</p>
+        <div class="chart-placeholder" role="img" aria-label="Круговая диаграмма статусов">
+          <div style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+            <div style="width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#22c55e 0% 71%, #f59e0b 71% 85%, #ef4444 85% 95%, #3b82f6 95% 100%);"></div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; background: #22c55e; border-radius: 2px;"></span><span>Решено: 71%</span></div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span><span>В работе: 14%</span></div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; background: #ef4444; border-radius: 2px;"></span><span>Отклонено: 10%</span></div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 2px;"></span><span>Новые: 5%</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Таблица сравнения округов -->
+    <section class="admin-section">
+      <div class="admin-section__header">
+        <h2 class="admin-section__title">Сравнение эффективности округов</h2>
+      </div>
+      <div class="admin-section__content">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Округ</th>
+                <th scope="col">Депутат</th>
+                <th scope="col">Всего обращений</th>
+                <th scope="col">Решено</th>
+                <th scope="col">В работе</th>
+                <th scope="col">% Решения</th>
+                <th scope="col">Ср. время (дни)</th>
+                <th scope="col">Удовлетворённость</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Округ №1</strong></td>
+                <td>Сидоров А.П.</td>
+                <td>287</td>
+                <td>264</td>
+                <td>15</td>
+                <td><span class="status-badge status-badge--approved">92%</span></td>
+                <td>12.5</td>
+                <td>4.5/5</td>
+              </tr>
+              <tr>
+                <td><strong>Округ №2</strong></td>
+                <td>Не назначен</td>
+                <td>198</td>
+                <td>154</td>
+                <td>32</td>
+                <td><span class="status-badge status-badge--progress">78%</span></td>
+                <td>18.2</td>
+                <td>3.8/5</td>
+              </tr>
+              <tr>
+                <td><strong>Округ №3</strong></td>
+                <td>Иванов И.И.</td>
+                <td>245</td>
+                <td>208</td>
+                <td>25</td>
+                <td><span class="status-badge status-badge--approved">85%</span></td>
+                <td>14.1</td>
+                <td>4.2/5</td>
+              </tr>
+              <tr>
+                <td><strong>Округ №4</strong></td>
+                <td>Не назначен</td>
+                <td>156</td>
+                <td>101</td>
+                <td>38</td>
+                <td><span class="status-badge status-badge--pending">65%</span></td>
+                <td>21.3</td>
+                <td>3.5/5</td>
+              </tr>
+              <tr>
+                <td><strong>Округ №5</strong></td>
+                <td>Петрова М.С.</td>
+                <td>361</td>
+                <td>256</td>
+                <td>72</td>
+                <td><span class="status-badge status-badge--progress">71%</span></td>
+                <td>16.8</td>
+                <td>4.0/5</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Быстрые ссылки -->
+    <aside class="quick-links-card">
+      <p class="quick-links-card__title">Действия</p>
+      <div class="quick-links-list">
+        <a class="text-link text-link--strong" href="dashboard">← К главной панели</a>
+        <a class="text-link text-link--strong" href="#export-settings">⚙️ Настройки экспорта</a>
+        <a class="text-link text-link--strong" href="#auto-reports">📧 Автоотчёты по email</a>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

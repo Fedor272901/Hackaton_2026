@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Модерация обращений: скрытие, удаление, управление категориями.">
+  <title>Портал обращений — Модерация</title>
+  <link rel="stylesheet" href="/static/css/styleadmin.css">
+</head>
+<body class="admin-dashboard">
+  <!-- Шапка админ-панели -->
+  <header class="admin-header">
+    <div class="admin-header__brand">
+      <div class="admin-header__logo" aria-hidden="true">АД</div>
+      <div>
+        <h1 class="admin-header__title">Административная панель</h1>
+        <p class="admin-header__subtitle">Управление системой обращений</p>
+      </div>
+    </div>
+
+    <nav class="admin-nav" aria-label="Навигация по админ-панели">
+      <a href="dashboard" class="admin-nav__link">Главная</a>
+      <a href="deputies" class="admin-nav__link">Депутаты</a>
+      <a href="districts" class="admin-nav__link">Округа</a>
+      <a href="moderation" class="admin-nav__link active">Модерация</a>
+      <a href="statistics" class="admin-nav__link">Статистика</a>
+    </nav>
+
+    <div class="admin-header__profile">
+      <div class="admin-header__user">
+        <div class="admin-header__avatar" aria-hidden="true">АИ</div>
+        <div>
+          <p class="admin-header__name">АДМИНИСТРАТОР</p>
+          <p class="admin-header__role">Суперпользователь</p>
+        </div>
+      </div>
+      <a class="action-btn action-btn--secondary action-btn--sm" href="../public/auth">Выйти</a>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="admin-main">
+    <!-- Герой-секция -->
+    <section class="admin-hero">
+      <div class="admin-hero__content">
+        <p class="section-card__eyebrow">Модерация контента</p>
+        <h1>Управление обращениями</h1>
+        <p class="admin-hero__text">Модерация обращений: скрытие, удаление, жалоб, управление справочником категорий.</p>
+      </div>
+    </section>
+
+    <!-- Фильтры и поиск -->
+    <section class="admin-section">
+      <div class="admin-section__content">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+          <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+            <label class="form-label sr-only" for="search-appeals">Поиск обращений</label>
+            <input type="text" id="search-appeals" class="form-input" placeholder="🔍 Поиск по тексту или ID...">
+          </div>
+          <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+            <label class="form-label sr-only" for="filter-category">Категория</label>
+            <select id="filter-category" class="form-select">
+              <option value="">Все категории</option>
+              <option value="roads">Дороги и тротуары</option>
+              <option value="utilities">ЖКХ</option>
+              <option value="improvement">Благоустройство</option>
+              <option value="transport">Транспорт</option>
+              <option value="other">Другое</option>
+            </select>
+          </div>
+          <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+            <label class="form-label sr-only" for="filter-moderation-status">Статус модерации</label>
+            <select id="filter-moderation-status" class="form-select">
+              <option value="">Все статусы</option>
+              <option value="new">Новые</option>
+              <option value="approved">Одобрено</option>
+              <option value="hidden">Скрыто</option>
+              <option value="rejected">Отклонено</option>
+            </select>
+          </div>
+          <button class="action-btn action-btn--primary">Применить</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Таблица обращений -->
+    <section class="admin-section">
+      <div class="admin-section__header">
+        <h2 class="admin-section__title">Обращения на модерации</h2>
+        <div class="admin-section__actions">
+          <button class="action-btn action-btn--secondary action-btn--sm">📥 Экспорт CSV</button>
+        </div>
+      </div>
+
+      <!-- Панель массовых действий -->
+      <div class="bulk-actions hidden">
+        <span class="bulk-actions__count">Выбрано: 0</span>
+        <div class="bulk-actions__buttons">
+          <button class="action-btn action-btn--warning action-btn--sm">👁️ Скрыть выбранные</button>
+          <button class="action-btn action-btn--danger action-btn--sm">🗑️ Удалить выбранные</button>
+        </div>
+      </div>
+
+      <div class="admin-section__content">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col"><input type="checkbox" class="table-checkbox" aria-label="Выбрать все"></th>
+                <th scope="col">ID</th>
+                <th scope="col">Категория</th>
+                <th scope="col">Описание</th>
+                <th scope="col">Автор</th>
+                <th scope="col">Дата</th>
+                <th scope="col">Статус</th>
+                <th scope="col">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Новое обращение -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td>#12389</td>
+                <td><span class="status-badge status-badge--new">ЖКХ</span></td>
+                <td>Проблема с отоплением в доме...</td>
+                <td>citizen@example.com</td>
+                <td>16.01.2025</td>
+                <td><span class="status-badge status-badge--new">На проверке</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm" title="Одобрить">✓</button>
+                  <button class="action-btn action-btn--warning action-btn--sm" title="Скрыть">👁️</button>
+                  <button class="action-btn action-btn--danger action-btn--sm" title="Удалить">🗑️</button>
+                </td>
+              </tr>
+
+              <!-- Новое обращение -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td>#12388</td>
+                <td><span class="status-badge status-badge--progress">Дороги</span></td>
+                <td>Разбитая дорога на улице...</td>
+                <td>user@example.com</td>
+                <td>16.01.2025</td>
+                <td><span class="status-badge status-badge--new">На проверке</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm" title="Одобрить">✓</button>
+                  <button class="action-btn action-btn--warning action-btn--sm" title="Скрыть">👁️</button>
+                  <button class="action-btn action-btn--danger action-btn--sm" title="Удалить">🗑️</button>
+                </td>
+              </tr>
+
+              <!-- Обращение на проверке -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td>#12385</td>
+                <td><span class="status-badge status-badge--review">Благоустройство</span></td>
+                <td>Не работает освещение...</td>
+                <td>resident@example.com</td>
+                <td>15.01.2025</td>
+                <td><span class="status-badge status-badge--review">На проверке</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm" title="Одобрить">✓</button>
+                  <button class="action-btn action-btn--warning action-btn--sm" title="Скрыть">👁️</button>
+                  <button class="action-btn action-btn--danger action-btn--sm" title="Удалить">🗑️</button>
+                </td>
+              </tr>
+
+              <!-- Скрытое обращение -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td>#12380</td>
+                <td><span class="status-badge status-badge--rejected">Другое</span></td>
+                <td>Некорректное содержание...</td>
+                <td>spam@example.com</td>
+                <td>14.01.2025</td>
+                <td><span class="status-badge status-badge--moderation">Скрыто</span></td>
+                <td>
+                  <button class="action-btn action-btn--secondary action-btn--sm" title="Восстановить">↻</button>
+                  <button class="action-btn action-btn--danger action-btn--sm" title="Удалить">🗑️</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Управление категориями -->
+    <section class="admin-section">
+      <div class="admin-section__header">
+        <h2 class="admin-section__title">Категории обращений</h2>
+        <div class="admin-section__actions">
+          <button class="action-btn action-btn--primary action-btn--sm">+ Добавить категорию</button>
+        </div>
+      </div>
+      <div class="admin-section__content">
+        <div class="category-grid">
+          <div class="category-card">
+            <div class="category-card__icon">🛣️</div>
+            <div class="category-card__info">
+              <p class="category-card__name">Дороги и тротуары</p>
+              <p class="category-card__count">342 обращения</p>
+            </div>
+            <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+          </div>
+
+          <div class="category-card">
+            <div class="category-card__icon">🏠</div>
+            <div class="category-card__info">
+              <p class="category-card__name">ЖКХ</p>
+              <p class="category-card__count">521 обращение</p>
+            </div>
+            <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+          </div>
+
+          <div class="category-card">
+            <div class="category-card__icon">🌳</div>
+            <div class="category-card__info">
+              <p class="category-card__name">Благоустройство</p>
+              <p class="category-card__count">198 обращений</p>
+            </div>
+            <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+          </div>
+
+          <div class="category-card">
+            <div class="category-card__icon">🚌</div>
+            <div class="category-card__info">
+              <p class="category-card__name">Транспорт</p>
+              <p class="category-card__count">86 обращений</p>
+            </div>
+            <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+          </div>
+
+          <div class="category-card">
+            <div class="category-card__icon">📋</div>
+            <div class="category-card__info">
+              <p class="category-card__name">Другое</p>
+              <p class="category-card__count">100 обращений</p>
+            </div>
+            <button class="action-btn action-btn--secondary action-btn--icon" title="Редактировать">✎</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Модальное окно редактирования категории -->
+    <section class="admin-modal" id="edit-category-modal" aria-labelledby="edit-category-title">
+      <div class="admin-modal__dialog">
+        <div class="admin-modal__header">
+          <div>
+            <h2 class="admin-modal__title" id="edit-category-title">Редактирование категории</h2>
+            <p class="admin-modal__subtitle">Дороги и тротуары</p>
+          </div>
+          <button class="admin-modal__close" aria-label="Закрыть">×</button>
+        </div>
+
+        <div class="admin-modal__content">
+          <div class="form-group">
+            <label class="form-label" for="category-name">Название категории</label>
+            <input type="text" id="category-name" class="form-input" value="Дороги и тротуары">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="category-icon">Иконка (эмодзи)</label>
+            <input type="text" id="category-icon" class="form-input" value="🛣️" style="font-size: 1.5rem;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="category-description">Описание</label>
+            <textarea id="category-description" class="form-textarea" rows="3">Проблемы с дорожным покрытием, тротуарами, ямами, разметкой</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="category-color">Цвет метки</label>
+            <input type="color" id="category-color" class="form-input" value="#3b82f6" style="height: 50px; padding: 0.25rem;">
+          </div>
+        </div>
+
+        <div class="admin-modal__footer">
+          <button class="action-btn action-btn--danger">Удалить категорию</button>
+          <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+            <button class="action-btn action-btn--secondary">Отмена</button>
+            <button class="action-btn action-btn--primary">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

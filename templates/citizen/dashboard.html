@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет гражданина — Портал обращений{% endblock %}
+
+{% block extra_meta %}
+<meta name="description" content="Личный кабинет гражданина для подачи и отслеживания обращений к местным депутатам">
+{% endblock %}
+
+{% block extra_head %}
+<input class="state-toggle" type="radio" name="dashboard-view" id="dashboard-view-history" checked>
+<input class="state-toggle" type="radio" name="dashboard-view" id="dashboard-view-create">
+{% endblock %}
+
+{% block body_class %}dashboard-page citizen-dashboard{% endblock %}
+
+{% block navbar %}
+<header class="dashboard-header">
+  <div class="dashboard-header__brand">
+    <div class="dashboard-header__logo" aria-hidden="true">МД</div>
+    <div>
+      <p class="dashboard-header__eyebrow">Портал обращений</p>
+      <p class="dashboard-header__title">Кабинет гражданина</p>
+    </div>
+  </div>
+
+  <nav class="dashboard-nav" aria-label="Навигация по кабинету">
+    <label class="dashboard-nav__link" for="dashboard-view-history">История обращений</label>
+    <label class="dashboard-nav__link" for="dashboard-view-create">Подать обращение</label>
+  </nav>
+
+  <div class="dashboard-header__profile">
+    <div class="dashboard-header__user">
+      <div class="dashboard-header__avatar" aria-hidden="true">
+        {{ current_user.first_name|first|upper }}{{ current_user.last_name|first|upper }}
+      </div>
+      <div>
+        <p class="dashboard-header__name">{{ current_user.first_name }} {{ current_user.last_name }}</p>
+        <p class="dashboard-header__role">Гражданин</p>
+      </div>
+    </div>
+    <a class="button button--secondary button--compact" href="{{ url_for('logout') }}">Выйти</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block main_class %}dashboard-main{% endblock %}
+
+{% block content %}
+<section class="dashboard-view dashboard-view--history" id="history-panel" aria-labelledby="history-title">
+  <div class="dashboard-hero">
+    <div>
+      <p class="section-card__eyebrow">Личный кабинет</p>
+      <h1 class="dashboard-hero__title" id="history-title">История обращений</h1>
+      <p class="dashboard-hero__text">Следите за статусом своих заявок и открывайте подробности, чтобы увидеть ответ местного депутата</p>
+    </div>
+    <div class="dashboard-hero__status">
+      <span class="dashboard-hero__status-dot" aria-hidden="true"></span>
+      <span>{{ last_update_timestamp|format_datetime }}</span>
+    </div>
+  </div>
+
+  <section class="summary-grid" aria-label="Краткая сводка по обращениям">
+    <article class="summary-card summary-card--total">
+      <p class="summary-card__value">{{ appeals_total|default_if_empty('0') }}</p>
+      <p class="summary-card__label">Всего обращений</p>
+    </article>
+    <article class="summary-card summary-card--in-progress">
+      <p class="summary-card__value">{{ appeals_in_progress|default_if_empty('0') }}</p>
+      <p class="summary-card__label">В работе и на рассмотрении</p>
+    </article>
+    <article class="summary-card summary-card--completed">
+      <p class="summary-card__value">{{ appeals_completed|default_if_empty('0') }}</p>
+      <p class="summary-card__label">Выполнено</p>
+    </article>
+  </section>
+
+  <section class="appeals-list" aria-label="Список обращений">
+    {% if appeals %}
+      {% for appeal in appeals %}
+      <article class="appeal-card" data-appeal-id="{{ appeal.id }}">
+        <div class="appeal-card__meta">
+          <p class="appeal-card__number">№{{ appeal.id }}</p>
+          <p class="appeal-card__date" data-timestamp="{{ appeal.created_at }}">{{ appeal.created_at|format_datetime }}</p>
+        </div>
+        <div class="appeal-card__body">
+          <span class="appeal-card__badge appeal-card__badge--{{ appeal.category_code|default_if_empty('other') }}">
+            {{ appeal.category_name|default_if_empty('Без категории') }}
+          </span>
+          <h2 class="appeal-card__title">{{ appeal.title|truncate_text(60) }}</h2>
+          <p class="appeal-card__excerpt">{{ appeal.description|strip_html|truncate_text(150) }}</p>
+        </div>
+        <div class="appeal-card__status-wrap">
+          <span class="appeal-card__status appeal-card__status--{{ appeal.status_code|get_status_color }}" data-status-code="{{ appeal.status_code|default_if_empty('unknown') }}">
+            {{ appeal.status_code|get_status_label }}
+          </span>
+          <button class="text-link text-link--strong" type="button" data-open-modal data-appeal-id="{{ appeal.id }}">Подробнее</button>
+        </div>
+      </article>
+      {% endfor %}
+    {% else %}
+      <aside class="empty-state" aria-labelledby="empty-state-title">
+        <div class="empty-state__illustration" aria-hidden="true">
+          <span class="empty-state__ring"></span>
+          <span class="empty-state__dot"></span>
+        </div>
+        <div class="empty-state__content">
+          <h2 class="empty-state__title" id="empty-state-title">У вас нет обращений</h2>
+          <p class="empty-state__text">Подайте первое обращение, чтобы отслеживать его статус и получать ответы от депутатов</p>
+          <label class="button button--primary empty-state__action" for="dashboard-view-create">Подать первое обращение</label>
+        </div>
+      </aside>
+    {% endif %}
+  </section>
+</section>
+
+<section class="dashboard-view dashboard-view--create" id="create-panel" aria-labelledby="create-title">
+  <div class="dashboard-hero dashboard-hero--form">
+    <div>
+      <p class="section-card__eyebrow">Новая заявка</p>
+      <h1 class="dashboard-hero__title" id="create-title">Подача обращения</h1>
+      <p class="dashboard-hero__text">Все поля обязательны, кроме фотографий</p>
+    </div>
+    <div class="dashboard-hero__tips">
+      <p class="dashboard-hero__tip">Короткий и конкретный заголовок</p>
+      <p class="dashboard-hero__tip">Адрес определяет округ автоматически</p>
+    </div>
+  </div>
+
+  <div class="create-layout">
+    <form class="appeal-form" action="{{ url_for('citizen_create_appeal') }}" method="post" enctype="multipart/form-data">
+      <fieldset class="form-section">
+        <legend class="form-section__title">Основная информация</legend>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-category">Категория</label>
+          <select class="form__control" id="appeal-category" name="category" required>
+            <option value="">Выберите категорию</option>
+            {% for category in categories %}
+            <option value="{{ category.code }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+          <p class="form__error">Выберите категорию обращения</p>
+        </div>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-title">Заголовок</label>
+          <input
+            class="form__control"
+            id="appeal-title"
+            name="title"
+            type="text"
+            placeholder="Например: Валяются деревья на детской площадке"
+            maxlength="100"
+            minlength="10"
+            required>
+          <p class="form__hint">До 100 символов</p>
+          <p class="form__error">Введите заголовок длиной от 10 до 100 символов</p>
+        </div>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-description">Описание проблемы</label>
+          <textarea
+            class="form__control form__control--textarea"
+            id="appeal-description"
+            name="description"
+            placeholder="Опишите, что произошло, как давно проблема существует и чем она мешает жителям"
+            minlength="50"
+            maxlength="1000"
+            required></textarea>
+          <p class="form__hint">От 50 до 1000 символов</p>
+          <p class="form__error">Описание должно содержать от 50 до 1000 символов</p>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend class="form-section__title">Фото и адрес</legend>
+
+        <div class="form__field">
+          <span class="form__label">Загрузка фото</span>
+          <label class="upload-dropzone" for="appeal-photos">
+            <input class="upload-dropzone__input" id="appeal-photos" name="photos" type="file" accept="image/jpeg,image/png" multiple>
+            <span class="upload-dropzone__icon" aria-hidden="true"></span>
+            <span class="upload-dropzone__title">Перетащите изображения сюда или выберите файлы</span>
+            <span class="upload-dropzone__text">До 3 файлов, форматы JPG/PNG, макс. 5 МБ</span>
+          </label>
+        </div>
+
+        <div class="photo-preview" aria-label="Превью загруженных изображений">
+          <figure class="photo-preview__item">
+            <div class="photo-preview__placeholder" role="img" aria-label="Превью фото 1"></div>
+            <figcaption>Фото 1</figcaption>
+          </figure>
+          <figure class="photo-preview__item">
+            <div class="photo-preview__placeholder" role="img" aria-label="Превью фото 2"></div>
+            <figcaption>Фото 2</figcaption>
+          </figure>
+          <figure class="photo-preview__item">
+            <div class="photo-preview__placeholder" role="img" aria-label="Превью фото 3"></div>
+            <figcaption>Фото 3</figcaption>
+          </figure>
+        </div>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-address">Адрес проблемы</label>
+          <input
+            class="form__control"
+            id="appeal-address"
+            name="address"
+            type="text"
+            placeholder="Например: г. Калуга, ул. Московская, д. 291/2"
+            autocomplete="street-address"
+            required>
+          <p class="form__hint">Поле поддерживает автодополнение</p>
+          <p class="form__error">Укажите адрес проблемы</p>
+        </div>
+
+        <input class="state-toggle state-toggle--inline" type="radio" name="address-mode" id="address-mode-manual" checked>
+        <input class="state-toggle state-toggle--inline" type="radio" name="address-mode" id="address-mode-map">
+
+        <div class="address-switcher" aria-label="Способ указания адреса">
+          <label class="address-switcher__label" for="address-mode-manual">Ручной ввод</label>
+          <label class="address-switcher__label" for="address-mode-map">На карте</label>
+        </div>
+
+        <div class="address-panels">
+          <div class="address-panel address-panel--manual">
+            <div class="address-panel__surface">
+              <p class="address-panel__title">Подсказки для ручного ввода</p>
+              <p class="address-panel__text">Автодополнение адресов после начала ввода</p>
+              <div class="autocomplete-placeholder">
+                <span class="autocomplete-placeholder__item">ТЕСТ 1</span>
+                <span class="autocomplete-placeholder__item">ТЕСТ 2</span>
+                <span class="autocomplete-placeholder__item">ТЕСТ 3</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="address-panel address-panel--map">
+            <div class="address-panel__surface address-panel__surface--map">
+              <div class="map-placeholder map-placeholder--large" role="img" aria-label="Карта для выбора точки"></div>
+              <p class="address-panel__title">Кликните, чтобы указать точку</p>
+              <p class="address-panel__text">Выбранная точка заполнит поле адреса</p>
+            </div>
+          </div>
+        </div>
+
+        <article class="district-card">
+          <p class="district-card__eyebrow">Округ определён автоматически</p>
+          <h2 class="district-card__title">{{ district_name|default_if_empty('Округ не определён') }}</h2>
+          <p class="district-card__text">Депутат: {{ deputy_name|default_if_empty('Не назначен') }}</p>
+        </article>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend class="form-section__title">Подтверждение</legend>
+
+        <div class="form__field form__field--checkbox">
+          <label class="checkbox">
+            <input class="checkbox__control" type="checkbox" name="truth_confirmed" required>
+            <span class="checkbox__box" aria-hidden="true"></span>
+            <span class="checkbox__label">Я подтверждаю достоверность указанной информации</span>
+          </label>
+          <p class="form__error">Подтвердите достоверность данных</p>
+        </div>
+
+        <div class="form__actions">
+          <button class="button button--primary button--wide" type="submit">Подать обращение</button>
+        </div>
+      </fieldset>
+    </form>
+
+    <aside class="submission-aside">
+      <article class="submission-card submission-card--highlight">
+        <p class="submission-card__eyebrow">Спасибо за использование сервиса</p>
+      </article>
+      <article class="submission-card">
+        <p class="submission-card__eyebrow">Мы стремимся к высокому уровню обслуживания</p>
+      </article>
+    </aside>
+  </div>
+</section>
+
+<section class="modal modal--detail" id="appeal-detail-modal" aria-labelledby="appeal-detail-title" hidden>
+  <div class="modal__dialog">
+    <div class="modal__header">
+      <div>
+        <p class="section-card__eyebrow">Детали обращения</p>
+        <h2 class="modal__title" id="appeal-detail-title">Обращение</h2>
+        <p class="modal__subtitle" data-modal-subtitle></p>
+      </div>
+      <a class="modal__close" href="#history-panel" aria-label="Закрыть">Закрыть</a>
+    </div>
+
+    <div class="modal__meta" data-modal-meta></div>
+
+    <div class="modal__content" data-modal-content>
+      <p class="modal__loading">Загрузка данных...</p>
+    </div>
+  </div>
+</section>
+
+<section class="modal modal--success" id="appeal-success-modal" aria-labelledby="appeal-success-title">
+  <div class="modal__dialog modal__dialog--success">
+    <div class="modal__header">
+      <div>
+        <p class="section-card__eyebrow">Отправка обращения</p>
+        <h2 class="modal__title" id="appeal-success-title">Обращение отправлено</h2>
+      </div>
+      <a class="modal__close" href="#create-panel" aria-label="Закрыть">Закрыть</a>
+    </div>
+    <div class="modal__content">
+      <section class="response-card response-card--success">
+        <p class="response-card__text">Заявка зарегистрирована и будет передана депутату после проверки</p>
+      </section>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  'use strict';
+
+  var API_URL = window.location.origin;
+  var TOKEN_KEY = 'accessToken';
+
+  function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  function removeToken() {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+
+  function redirectToLogin() {
+    window.location.href = "{{ url_for('auth') }}";
+  }
+
+  async function loadUserProfile() {
+    var token = getToken();
+
+    if (!token) {
+      console.warn('Токен отсутствует');
+      redirectToLogin();
+      return;
+    }
+
+    try {
+      var response = await fetch(API_URL + '/users/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        var userData = await response.json();
+        updateProfileUI(userData);
+      } else if (response.status === 401) {
+        removeToken();
+        redirectToLogin();
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки профиля:', error);
+    }
+  }
+
+  function updateProfileUI(userData) {
+    var nameElement = document.querySelector('.dashboard-header__name');
+    if (nameElement && userData.first_name && userData.last_name) {
+      nameElement.textContent = userData.first_name + ' ' + userData.last_name;
+    }
+  }
+
+  function handleLogout(event) {
+    if (event) {
+      event.preventDefault();
+    }
+    removeToken();
+    redirectToLogin();
+  }
+
+  function bindLogoutButton() {
+    var logoutBtn = document.querySelector('.dashboard-header__profile .button--secondary');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+    }
+  }
+
+  function openModal(appealId) {
+    var modal = document.getElementById('appeal-detail-modal');
+    var titleEl = document.getElementById('appeal-detail-title');
+    var subtitleEl = document.querySelector('[data-modal-subtitle]');
+    var metaEl = document.querySelector('[data-modal-meta]');
+    var contentEl = document.querySelector('[data-modal-content]');
+
+    if (!modal || !titleEl || !subtitleEl || !metaEl || !contentEl) {
+      console.error('Элементы модального окна не найдены');
+      return;
+    }
+
+    modal.setAttribute('aria-hidden', 'false');
+    modal.removeAttribute('hidden');
+    document.body.style.overflow = 'hidden';
+
+    contentEl.innerHTML = '<p class="modal__loading">Загрузка данных...</p>';
+    titleEl.textContent = 'Обращение №' + appealId;
+    subtitleEl.textContent = '';
+    metaEl.innerHTML = '';
+
+    var token = getToken();
+    if (!token) {
+      contentEl.innerHTML = '<p class="modal__error">Требуется авторизация</p>';
+      return;
+    }
+
+    fetch(API_URL + '/api/requests/' + appealId, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки: ' + response.status);
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      var appeal = data.item || data;
+
+      titleEl.textContent = appeal.title || 'Обращение №' + appeal.id;
+
+      var createdDate = appeal.created_at ? new Date(appeal.created_at).toLocaleString('ru-RU') : 'Дата не указана';
+      subtitleEl.textContent = createdDate + ' · №' + (appeal.id || '00000');
+
+      var categoryBadge = '<span class="appeal-card__badge appeal-card__badge--' + (appeal.category_code || 'other') + '">' + (appeal.category_name || 'Без категории') + '</span>';
+      var statusBadge = '<span class="appeal-card__status appeal-card__status--' + (appeal.status_color || 'gray') + '">' + (appeal.status_label || 'Неизвестно') + '</span>';
+      metaEl.innerHTML = categoryBadge + statusBadge;
+
+      var html = '';
+
+      html += '<section class="modal__section">';
+      html += '<h3 class="modal__section-title">Описание проблемы</h3>';
+      html += '<p class="modal__text">' + (appeal.description || 'Описание отсутствует') + '</p>';
+      html += '</section>';
+
+      html += '<section class="modal__section modal__section--split">';
+      html += '<div>';
+      html += '<h3 class="modal__section-title">Адрес</h3>';
+      html += '<p class="modal__text">' + (appeal.address || 'Адрес не указан') + '</p>';
+      html += '<a class="text-link text-link--strong" href="https://yandex.ru/maps/" target="_blank" rel="noopener noreferrer">Открыть карту</a>';
+      html += '</div>';
+      html += '<div class="map-placeholder" role="img" aria-label="Карта с адресом"></div>';
+      html += '</section>';
+
+      if (appeal.photos && appeal.photos.length > 0) {
+        html += '<section class="modal__section">';
+        html += '<h3 class="modal__section-title">Прикреплённые фото</h3>';
+        html += '<div class="gallery-grid">';
+        for (var i = 0; i < appeal.photos.length; i++) {
+          html += '<div class="gallery-grid__item" role="img" aria-label="Фото ' + (i + 1) + '"></div>';
+        }
+        html += '</div>';
+        html += '</section>';
+      }
+
+      if (appeal.response_text) {
+        html += '<section class="response-card">';
+        html += '<p class="response-card__eyebrow">Ответ депутата</p>';
+        html += '<p class="response-card__text">' + appeal.response_text + '</p>';
+        var responseMeta = [];
+        if (appeal.response_date) {
+          responseMeta.push(new Date(appeal.response_date).toLocaleString('ru-RU'));
+        }
+        if (appeal.deputy_name) {
+          responseMeta.push(appeal.deputy_name);
+        }
+        html += '<p class="response-card__meta">' + (responseMeta.join(' · ') || 'Дата не указана') + '</p>';
+        html += '</section>';
+      } else {
+        html += '<section class="response-card">';
+        html += '<p class="response-card__eyebrow">Ответ депутата</p>';
+        html += '<p class="response-card__text">Ответ готовится</p>';
+        html += '</section>';
+      }
+
+      contentEl.innerHTML = html;
+    })
+    .catch(function(error) {
+      console.error('Ошибка загрузки обращения:', error);
+      contentEl.innerHTML = '<p class="modal__error">Не удалось загрузить данные обращения</p>';
+    });
+  }
+
+  function closeModal() {
+    var modal = document.getElementById('appeal-detail-modal');
+    if (modal) {
+      modal.setAttribute('aria-hidden', 'true');
+      modal.setAttribute('hidden', '');
+      document.body.style.overflow = '';
+    }
+  }
+
+  function bindModalButtons() {
+    document.addEventListener('click', function(event) {
+      var openButton = event.target.closest('[data-open-modal]');
+      if (openButton) {
+        var appealId = openButton.getAttribute('data-appeal-id');
+        if (appealId) {
+          openModal(appealId);
+        }
+      }
+
+      var closeButton = event.target.closest('.modal__close');
+      if (closeButton) {
+        event.preventDefault();
+        closeModal();
+      }
+    });
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
+    });
+  }
+
+  function init() {
+    loadUserProfile();
+    bindLogoutButton();
+    bindModalButtons();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+{% endblock %}

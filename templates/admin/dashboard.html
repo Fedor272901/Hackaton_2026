@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Панель администратора портала обращений граждан.">
+  <title>Портал обращений — Панель администратора</title>
+  <link rel="stylesheet" href="/static/css/styleadmin.css">
+</head>
+<body class="admin-dashboard">
+  <!-- Шапка админ-панели -->
+  <header class="admin-header">
+    <div class="admin-header__brand">
+      <div class="admin-header__logo" aria-hidden="true">АД</div>
+      <div>
+        <h1 class="admin-header__title">Административная панель</h1>
+        <p class="admin-header__subtitle">Управление системой обращений</p>
+      </div>
+    </div>
+
+    <nav class="admin-nav" aria-label="Навигация по админ-панели">
+      <a href="dashboard.html" class="admin-nav__link active">Главная</a>
+      <a href="deputies.html" class="admin-nav__link">Депутаты</a>
+      <a href="districts.html" class="admin-nav__link">Округа</a>
+      <a href="moderation.html" class="admin-nav__link">Модерация</a>
+      <a href="statistics.html" class="admin-nav__link">Статистика</a>
+    </nav>
+
+    <div class="admin-header__profile">
+      <div class="admin-header__user">
+        <div class="admin-header__avatar" aria-hidden="true">АИ</div>
+        <div>
+          <p class="admin-header__name">АДМИНИСТРАТОР</p>
+          <p class="admin-header__role">Суперпользователь</p>
+        </div>
+      </div>
+      <a class="action-btn action-btn--secondary action-btn--sm" href="../public/auth.html">Выйти</a>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="admin-main">
+    <!-- Герой-секция -->
+    <section class="admin-hero">
+      <div class="admin-hero__content">
+        <p class="section-card__eyebrow">Сводная панель</p>
+        <h1>Обзор системы</h1>
+        <p class="admin-hero__text">Ключевые показатели, заявки на утверждение и задачи модерации в одном месте.</p>
+      </div>
+      <div class="admin-hero__status">
+        <span class="admin-hero__status-dot" aria-hidden="true"></span>
+        <span>СИСТЕМА РАБОТАЕТ НОРМАЛЬНО</span>
+      </div>
+    </section>
+
+    <!-- Виджеты статистики -->
+    <section class="admin-stats-grid" aria-label="Краткая сводка по системе" data-ajax-container="stats-grid">
+      <article class="admin-stat-card admin-stat-card--pending" data-stat="pending-requests">
+        <p class="admin-stat-card__value">{{ total_requests|default_if_empty('0') }}</p>
+        <p class="admin-stat-card__label">Всего обращений</p>
+        <span class="admin-stat-card__trend admin-stat-card__trend--up" data-trend>↑ за период</span>
+      </article>
+
+      <article class="admin-stat-card admin-stat-card--moderation" data-stat="moderation-count">
+        <p class="admin-stat-card__value">{{ districts_count|default_if_empty('0') }}</p>
+        <p class="admin-stat-card__label">Округов</p>
+        <span class="admin-stat-card__trend" data-trend>—</span>
+      </article>
+
+      <article class="admin-stat-card admin-stat-card--success" data-stat="total-requests">
+        <p class="admin-stat-card__value">{{ deputies_count|default_if_empty('0') }}</p>
+        <p class="admin-stat-card__label">Депутатов</p>
+        <span class="admin-stat-card__trend" data-trend>—</span>
+      </article>
+
+      <article class="admin-stat-card admin-stat-card--info" data-stat="active-deputies">
+        <p class="admin-stat-card__value">{{ status_distribution.get('new', 0)|default_if_empty('0') }}</p>
+        <p class="admin-stat-card__label">Новых обращений</p>
+        <span class="admin-stat-card__trend admin-stat-card__trend--up" data-trend>↑ требует внимания</span>
+      </article>
+    </section>
+
+    <!-- Секция: Заявки депутатов -->
+    <section class="admin-section">
+      <div class="admin-section__header">
+        <h2 class="admin-section__title">Заявки на утверждение депутатов</h2>
+        <div class="admin-section__actions">
+          <a href="deputies.html" class="action-btn action-btn--primary action-btn--sm">Все заявки</a>
+        </div>
+      </div>
+      <div class="admin-section__content">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">ФИО</th>
+                <th scope="col">Округ</th>
+                <th scope="col">Дата регистрации</th>
+                <th scope="col">Статус</th>
+                <th scope="col">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Иванов Иван Иванович</td>
+                <td>Округ №1</td>
+                <td>15.01.2025</td>
+                <td><span class="status-badge status-badge--pending">На рассмотрении</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm">✓ Утвердить</button>
+                  <button class="action-btn action-btn--danger action-btn--sm">✗ Отклонить</button>
+                </td>
+              </tr>
+              <tr>
+                <td>Петрова Мария Сергеевна</td>
+                <td>Округ №5</td>
+                <td>14.01.2025</td>
+                <td><span class="status-badge status-badge--pending">На рассмотрении</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm">✓ Утвердить</button>
+                  <button class="action-btn action-btn--danger action-btn--sm">✗ Отклонить</button>
+                </td>
+              </tr>
+              <tr>
+                <td>Сидоров Алексей Петрович</td>
+                <td>Округ №3</td>
+                <td>13.01.2025</td>
+                <td><span class="status-badge status-badge--pending">На рассмотрении</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm">✓ Утвердить</button>
+                  <button class="action-btn action-btn--danger action-btn--sm">✗ Отклонить</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Секция: Обращения на модерацию -->
+    <section class="admin-section">
+      <div class="admin-section__header">
+        <h2 class="admin-section__title">Обращения, требующие модерации</h2>
+        <div class="admin-section__actions">
+          <a href="moderation.html" class="action-btn action-btn--primary action-btn--sm">Все обращения</a>
+        </div>
+      </div>
+      <div class="admin-section__content">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Категория</th>
+                <th scope="col">Описание</th>
+                <th scope="col">Дата</th>
+                <th scope="col">Статус</th>
+                <th scope="col">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>#12389</td>
+                <td>ЖКХ</td>
+                <td>Проблема с отоплением в доме...</td>
+                <td>16.01.2025</td>
+                <td><span class="status-badge status-badge--new">Новое</span></td>
+                <td>
+                  <a href="moderation.html" class="action-btn action-btn--secondary action-btn--sm">Проверить</a>
+                </td>
+              </tr>
+              <tr>
+                <td>#12388</td>
+                <td>Дороги и тротуары</td>
+                <td>Разбитая дорога на улице...</td>
+                <td>16.01.2025</td>
+                <td><span class="status-badge status-badge--new">Новое</span></td>
+                <td>
+                  <a href="moderation.html" class="action-btn action-btn--secondary action-btn--sm">Проверить</a>
+                </td>
+              </tr>
+              <tr>
+                <td>#12385</td>
+                <td>Благоустройство</td>
+                <td>Не работает освещение...</td>
+                <td>15.01.2025</td>
+                <td><span class="status-badge status-badge--review">На проверке</span></td>
+                <td>
+                  <a href="moderation.html" class="action-btn action-btn--secondary action-btn--sm">Проверить</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Быстрые ссылки -->
+    <aside class="quick-links-card">
+      <p class="quick-links-card__title">Быстрые переходы</p>
+      <div class="quick-links-list">
+        <a class="text-link text-link--strong" href="deputies.html">👥 Управление депутатами</a>
+        <a class="text-link text-link--strong" href="districts.html">🗺️ Редактор округов</a>
+        <a class="text-link text-link--strong" href="moderation.html">📋 Модерация обращений</a>
+        <a class="text-link text-link--strong" href="statistics.html">📊 Глобальная статистика</a>
+        <a class="text-link text-link--strong" href="#settings">⚙️ Настройки системы</a>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

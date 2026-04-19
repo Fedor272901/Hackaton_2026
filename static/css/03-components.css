@@ -1,0 +1,1186 @@
+/* ============================================================================
+   COMPONENTS.CSS
+   Сборник всех UI-компонентов проекта
+
+   Этот файл содержит стили для кнопок, карточек, форм, таблиц и других
+   интерфейсных элементов. Все значения заменены на CSS-переменные из
+   variables.css для удобства поддержки.
+
+   ВАЖНО: Имена классов сохранены как в оригинальных файлах, чтобы не
+   ломать существующий HTML.
+   ========================================================================== */
+
+@import url('variables.css');
+
+/* ============================================================================
+   1. BUTTONS (.btn, .button)
+   Источники: styles.css (строки 2298-2345), style.css (строки 144-230)
+   ========================================================================== */
+
+/* Базовый класс кнопки - общие стили для всех кнопок */
+.btn,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--btn-radius-pill); /* Из variables.css (9999px) */
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Primary кнопка - основная кнопка действия */
+/* Источник: styles.css строка 2314 */
+.btn--primary,
+.button--primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+  color: var(--color-white);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); /* Тень с прозрачностью primary */
+}
+
+.btn--primary:hover,
+.button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+/* Secondary/Outline кнопка - вторичное действие */
+/* Источник: styles.css строка 2327 */
+.btn--outline,
+.button--secondary {
+  background: var(--color-white);
+  border-color: rgba(148, 163, 184, 0.4); /* slate-400 с прозрачностью */
+  color: var(--color-slate-700);
+}
+
+.btn--outline:hover,
+.button--secondary:hover {
+  background: rgba(248, 250, 252, 0.8); /* slate-50 с прозрачностью */
+  border-color: rgba(37, 99, 235, 0.3); /* primary с прозрачностью */
+  color: var(--color-primary-strong);
+}
+
+/* Малая кнопка - для компактных интерфейсов */
+/* Источник: styles.css строка 2340 */
+.btn--sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+}
+
+/* Широкая кнопка - на всю ширину контейнера */
+/* Источник: styles.css строка 2345 */
+.btn--wide,
+.button--wide {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Компактная кнопка */
+/* Источник: style.css строка 186 */
+.button--compact {
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+/* Disabled состояние кнопки */
+/* Источник: style.css строка 222 */
+.btn:disabled,
+.btn[disabled],
+.button:disabled,
+.button[disabled] {
+  opacity: 0.6;
+  color: var(--color-slate-400);
+  background: var(--color-slate-100);
+  border-color: rgba(203, 213, 225, 0.8); /* slate-300 с прозрачностью */
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Hover эффект для кнопок */
+/* Источник: style.css строка 201 */
+.btn:hover,
+.button:hover {
+  text-decoration: none;
+  color: var(--color-primary-strong);
+  transition: color var(--transition), opacity var(--transition);
+}
+
+/* Focus состояние для доступности */
+/* Источник: style.css строка 237 */
+.btn:focus-visible,
+.button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.36); /* primary с прозрачностью */
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   2. CARDS (.card, .summary-card, .section-card)
+   Источники: styles.css (строки 1840-1860, 455-470), style.css (строки 107-125)
+   ========================================================================== */
+
+/* Универсальная карточка - базовый контейнер */
+/* Источник: styles.css строка 1840 */
+.card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius-lg); /* 20px из variables.css */
+  border: 1px solid rgba(226, 232, 240, 0.8); /* slate-200 с прозрачностью */
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  transition: box-shadow var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card__title {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-slate-800);
+}
+
+/* Карточка сводки - для статистики и показателей */
+/* Источник: styles.css строка 455 */
+.summary-card,
+.empty-state,
+.appeal-form,
+.submission-card,
+.district-card,
+.modal__dialog,
+.dashboard-hero {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow-md);
+}
+
+.summary-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+}
+
+.summary-card__value {
+  margin: 0.25rem 0 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-slate-950);
+  line-height: 1.2;
+}
+
+.summary-card__label {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Секционная карточка - акцентные блоки */
+/* Источник: style.css строка 107 */
+.section-card {
+  position: relative;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-sm);
+}
+
+.section-card--accent {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(219, 234, 254, 0.88) /* primary-soft */
+  );
+  border-color: rgba(191, 219, 254, 0.8); /* light blue с прозрачностью */
+}
+
+/* ============================================================================
+   3. FORMS (input, select, textarea, label, .form-group)
+   Источники: styles.css (строки 261-360), style.css (строки 68-75, 2330-2370)
+   ========================================================================== */
+
+/* Базовые стили для полей ввода */
+/* Источник: style.css строка 68 */
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* Label с поддержкой клика */
+/* Источник: style.css строка 74 */
+label[for] {
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+/* Группа формы - контейнер для label + input */
+/* Источник: style.css строка 2325 */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group__label,
+.form__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-slate-700);
+  margin-bottom: 0.5rem;
+}
+
+.form-group p {
+  margin: 0;
+  color: var(--color-slate-950);
+  line-height: 1.7;
+}
+
+/* Поля ввода: input, select, textarea внутри form-group */
+/* Источник: style.css строка 2340 */
+.form-group textarea,
+.form-group select,
+.form-group input,
+.form__control {
+  width: 100%;
+  padding: var(--input-padding); /* 0.75rem 1rem из variables.css */
+  border: 1px solid rgba(148, 163, 184, 0.4); /* slate-400 с прозрачностью */
+  border-radius: var(--radius-md); /* 16px */
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: var(--color-white);
+  color: var(--color-slate-950);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+/* Textarea - многострочное поле */
+/* Источник: style.css строка 2354 */
+.form-group textarea,
+.form__control--textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+/* Focus состояние для полей ввода */
+/* Источник: style.css строка 2360 */
+.form-group textarea:focus,
+.form-group select:focus,
+.form-group input:focus,
+.form__control:focus {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.7); /* primary с прозрачностью */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); /* primary ring */
+}
+
+/* Placeholder текст */
+/* Источник: style.css строка 282 */
+.form__control::placeholder {
+  color: var(--color-slate-400);
+}
+
+/* Hover эффект для полей */
+/* Источник: style.css строка 286 */
+.form__control:hover,
+.form-group input:hover,
+.form-group select:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+/* Select - специальный стиль для выпадающего списка */
+/* Источник: style.css строка 359 */
+select.form__control {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-slate-500) 50%),
+    linear-gradient(135deg, var(--color-slate-500) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2.5px),
+    calc(100% - 13px) calc(50% - 2.5px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2.5rem;
+}
+
+/* Error состояние для полей */
+/* Источник: style.css строка 327 */
+.form__field--error .form__control,
+.form__control:invalid:not(:focus):not(:placeholder-shown) {
+  border-color: rgba(220, 38, 38, 0.7); /* danger с прозрачностью */
+}
+
+.form__control:invalid:not(:focus):not(:placeholder-shown) {
+  background: linear-gradient(
+      0deg,
+      rgba(254, 242, 242, 0.55), /* danger-soft */
+      rgba(254, 242, 242, 0.55)
+    ),
+    var(--color-white);
+}
+
+/* Сообщение об ошибке */
+/* Источник: style.css строка 322 */
+.form__error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
+
+/* Label при фокусе на поле */
+/* Источник: style.css строка 336 */
+.form__field:has(.form__control:focus) .form__label {
+  color: var(--color-primary-strong);
+}
+
+/* ============================================================================
+   4. TABLES (table, .table-container, .stats-table)
+   Источники: styles.css (строки 1709-1760)
+   ========================================================================== */
+
+/* Контейнер таблицы с прокруткой */
+/* Источник: styles.css строка 1709 */
+.table-container {
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Базовая таблица */
+/* Источник: styles.css строка 1718 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+/* Заголовки таблицы */
+thead th {
+  padding: 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-slate-500);
+  background: rgba(241, 245, 249, 0.8); /* slate-100 */
+  border-bottom: 2px solid rgba(226, 232, 240, 0.9);
+}
+
+/* Ячейки таблицы */
+tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  color: var(--color-slate-700);
+  vertical-align: middle;
+}
+
+/* Hover эффект для строк */
+tbody tr:hover {
+  background: rgba(248, 250, 252, 0.9); /* slate-50 */
+}
+
+/* Последняя строка без границы */
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Таблица статистики */
+/* Источник: styles.css строка 2241 */
+.stats-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+
+.stats-table th {
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.stats-table td {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.stats-table td:first-child {
+  border-left: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.stats-table td:last-child {
+  border-right: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.stats-table tr:last-child td {
+  border-bottom: none;
+}
+
+.stats-table tr:hover td {
+  background: rgba(248, 250, 252, 0.95);
+}
+
+/* Ежемесячная таблица */
+/* Источник: styles.css строка 2273 */
+.monthly-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.monthly-table th,
+.monthly-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.monthly-table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-slate-600);
+}
+
+/* ============================================================================
+   5. STATUS BADGES (.status-badge)
+   Источники: styles.css (строки 1752-1785)
+   ========================================================================== */
+
+/* Базовый бейдж статуса */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Новый статус */
+.status-badge--new {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+/* На рассмотрении */
+.status-badge--review {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+/* В работе */
+.status-badge--in_progress {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+/* Выполнено */
+.status-badge--done {
+  background: var(--color-success-soft);
+  color: #166534;
+}
+
+/* Отклонено */
+.status-badge--rejected {
+  background: var(--color-danger-soft);
+  color: #991b1b;
+}
+
+/* ============================================================================
+   6. PAGINATION (.pagination)
+   Источники: styles.css (строки 1788-1798)
+   ========================================================================== */
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+/* ============================================================================
+   7. QUICK ACTIONS (.quick-actions)
+   Источники: styles.css (строки 1801-1815)
+   ========================================================================== */
+
+.quick-actions {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.quick-actions__title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-slate-800);
+}
+
+/* ============================================================================
+   8. DETAIL LAYOUT (.detail-layout)
+   Источники: styles.css (строки 1818-1838)
+   ========================================================================== */
+
+.detail-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.detail-layout__main {
+  flex: 2;
+  min-width: 400px;
+}
+
+.detail-layout__sidebar {
+  flex: 1;
+  min-width: 300px;
+}
+
+/* ============================================================================
+   9. IMAGE GALLERY (.image-gallery)
+   Источники: style.css (строки 2368-2390)
+   ========================================================================== */
+
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.image-gallery__item {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(226, 232, 240, 0.6);
+  cursor: pointer;
+  transition: transform var(--transition);
+}
+
+.image-gallery__item:hover {
+  transform: scale(1.05);
+}
+
+.image-gallery__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ============================================================================
+   10. TIMELINE (.timeline)
+   Источники: style.css (строки 2392-2420)
+   ========================================================================== */
+
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(226, 232, 240, 0.8);
+  border-radius: 2px;
+}
+
+.timeline__item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline__item::before {
+  content: '';
+  position: absolute;
+  left: -2rem;
+  top: 0.25rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-white);
+  border: 2px solid var(--color-primary);
+  z-index: 1;
+}
+
+.timeline__date {
+  font-size: 0.8rem;
+  color: var(--color-slate-500);
+  margin-bottom: 0.25rem;
+}
+
+.timeline__content {
+  color: var(--color-slate-800);
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   11. FILTERS (.filters, .filter-group)
+   Источники: styles.css (строки 2145-2180)
+   ========================================================================== */
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.filter-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-slate-600);
+}
+
+.filter-group select,
+.filter-group input {
+  min-width: 180px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  font-size: 0.9rem;
+  color: var(--color-slate-800);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.filter-group select:hover,
+.filter-group input:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.7);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* ============================================================================
+   12. AUTH FORMS (.auth-form, .auth-tabs)
+   Источники: style.css (строки 2930-2945), styles.css (строки 146-220)
+   ========================================================================== */
+
+.auth-form input:invalid {
+  border-color: rgba(220, 38, 38, 0.6);
+}
+
+.auth-form input:invalid + .form__error {
+  display: block;
+}
+
+/* Tabs для авторизации */
+.auth-tabs__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-slate-600);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.auth-tabs__label:hover {
+  color: var(--color-primary-strong);
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.auth-tabs__label--active {
+  color: var(--color-primary-strong);
+  border-color: var(--color-primary);
+}
+
+/* Address Switcher */
+.address-switcher__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-slate-700);
+  background: rgba(248, 250, 252, 0.6);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.address-switcher__label:hover {
+  background: rgba(241, 245, 249, 0.8);
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.address-switcher__label--active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-strong);
+}
+
+/* ============================================================================
+   13. MODAL (.modal, .modal__dialog)
+   Источники: style.css (различные секции)
+   ========================================================================== */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.6); /* slate-950 с прозрачностью */
+  z-index: 1000;
+}
+
+.modal__dialog {
+  max-width: 500px;
+  width: 100%;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+}
+
+.modal__title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-slate-950);
+}
+
+.modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition);
+}
+
+.modal__close:hover {
+  background: rgba(226, 232, 240, 0.9);
+}
+
+/* ============================================================================
+   14. PAGE HEADER (.page-header)
+   Источники: styles.css (различные секции)
+   ========================================================================== */
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-slate-950);
+  line-height: 1.2;
+}
+
+.page-header__subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  color: var(--color-slate-600);
+}
+
+/* ============================================================================
+   15. STATS GRID (.stats-grid)
+   Источники: styles.css (различные секции)
+   ========================================================================== */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================================
+   16. CHARTS (.chart-card, .charts-grid)
+   Источники: styles.css (различные секции)
+   ========================================================================== */
+
+.charts-grid {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.chart-card {
+  flex: 1;
+  min-width: 300px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+}
+
+.chart-card--small {
+  flex: none;
+  width: calc(33.333% - 1rem);
+  min-width: 250px;
+}
+
+/* ============================================================================
+   17. UPLOAD DROPZONE (.upload-dropzone)
+   Источники: style.css (строка 1401)
+   ========================================================================== */
+
+.upload-dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border: 2px dashed rgba(148, 163, 184, 0.4);
+  border-radius: var(--radius-lg);
+  background: rgba(248, 250, 252, 0.5);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.upload-dropzone:hover {
+  border-color: rgba(37, 99, 235, 0.4);
+  background: rgba(241, 245, 249, 0.6);
+}
+
+.upload-dropzone__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-dropzone__icon {
+  width: 48px;
+  height: 48px;
+  color: var(--color-slate-400);
+  margin-bottom: 1rem;
+}
+
+.upload-dropzone__text {
+  font-size: 0.95rem;
+  color: var(--color-slate-600);
+}
+
+.upload-dropzone__hint {
+  font-size: 0.8rem;
+  color: var(--color-slate-500);
+  margin-top: 0.5rem;
+}
+
+/* ============================================================================
+   18. EMPTY STATE (.empty-state)
+   Источники: styles.css (строка 455)
+   ========================================================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.empty-state__icon {
+  width: 64px;
+  height: 64px;
+  color: var(--color-slate-300);
+  margin-bottom: 1rem;
+}
+
+.empty-state__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-slate-800);
+}
+
+.empty-state__text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-slate-600);
+  max-width: 40ch;
+}
+
+/* ============================================================================
+   19. DISTRICT CARD (.district-card)
+   Источники: styles.css (строка 455)
+   ========================================================================== */
+
+.district-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.district-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.district-card__name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-slate-800);
+}
+
+.district-card__count {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-slate-500);
+}
+
+/* ============================================================================
+   20. SUBMISSION CARD (.submission-card)
+   Источники: styles.css (строка 455)
+   ========================================================================== */
+
+.submission-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1rem;
+  transition: box-shadow var(--transition);
+}
+
+.submission-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.submission-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.submission-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-slate-800);
+}
+
+.submission-card__date {
+  font-size: 0.8rem;
+  color: var(--color-slate-500);
+}
+
+.submission-card__body {
+  font-size: 0.95rem;
+  color: var(--color-slate-700);
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   21. APPEAL FORM (.appeal-form)
+   Источники: styles.css (строка 455)
+   ========================================================================== */
+
+.appeal-form {
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+}
+
+.appeal-form__title {
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-slate-950);
+}
+
+/* ============================================================================
+   22. DASHBOARD HERO (.dashboard-hero)
+   Источники: styles.css (строка 455)
+   ========================================================================== */
+
+.dashboard-hero {
+  padding: 2rem;
+  border-radius: var(--radius-xl);
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-hero__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-slate-950);
+}
+
+.dashboard-hero__subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-slate-600);
+}
+
+/* ============================================================================
+   23. AUTH PANEL (.auth-panel, .auth-intro)
+   Источники: style.css (строки 475-530)
+   ========================================================================== */
+
+.auth-panel {
+  order: -1;
+}
+
+.auth-intro {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+}
+
+.auth-intro__backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.32), transparent 18%),
+    radial-gradient(circle at 80% 12%, rgba(191, 219, 254, 0.62), transparent 28%),
+    linear-gradient(145deg, #1949b8, var(--color-primary) 48%, #0f5ec9 100%);
+}
+
+.auth-intro__content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  color: var(--color-white);
+}
+
+.auth-intro__eyebrow {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.auth-intro__title {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  color: var(--color-white);
+}
+
+.auth-intro__lead {
+  max-width: 52ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   24. SECTION CARD VARIANTS
+   Источники: style.css (различные секции)
+   ========================================================================== */
+
+.section-card--highlight {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(219, 234, 254, 0.12));
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.section-card--warning {
+  background: linear-gradient(135deg, rgba(202, 138, 4, 0.08), rgba(254, 243, 199, 0.12));
+  border-color: rgba(202, 138, 4, 0.2);
+}
+
+.section-card--danger {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.08), rgba(254, 226, 226, 0.12));
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+/* ============================================================================
+   25. UTILITY CLASSES
+   Различные вспомогательные классы
+   ========================================================================== */
+
+/* Скрытие элемента с сохранением места */
+.state-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  border: 0;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.state-toggle--inline {
+  pointer-events: none;
+}
+
+/* Preformatted text */
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Fieldset без стилей */
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}

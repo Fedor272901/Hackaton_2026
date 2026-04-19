@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Управление депутатами: утверждение, отклонение, редактирование профилей.">
+  <title>Портал обращений — Управление депутатами</title>
+  <link rel="stylesheet" href="/static/css/styleadmin.css">
+</head>
+<body class="admin-dashboard">
+  <!-- Шапка админ-панели -->
+  <header class="admin-header">
+    <div class="admin-header__brand">
+      <div class="admin-header__logo" aria-hidden="true">АД</div>
+      <div>
+        <h1 class="admin-header__title">Административная панель</h1>
+        <p class="admin-header__subtitle">Управление системой обращений</p>
+      </div>
+    </div>
+
+    <nav class="admin-nav" aria-label="Навигация по админ-панели">
+      <a href="dashboard" class="admin-nav__link">Главная</a>
+      <a href="deputies" class="admin-nav__link active">Депутаты</a>
+      <a href="districts" class="admin-nav__link">Округа</a>
+      <a href="moderation" class="admin-nav__link">Модерация</a>
+      <a href="statistics" class="admin-nav__link">Статистика</a>
+    </nav>
+
+    <div class="admin-header__profile">
+      <div class="admin-header__user">
+        <div class="admin-header__avatar" aria-hidden="true">АИ</div>
+        <div>
+          <p class="admin-header__name">АДМИНИСТРАТОР</p>
+          <p class="admin-header__role">Суперпользователь</p>
+        </div>
+      </div>
+      <a class="action-btn action-btn--secondary action-btn--sm" href="../public/auth">Выйти</a>
+    </div>
+  </header>
+
+  <!-- Основное содержимое -->
+  <main class="admin-main">
+    <!-- Герой-секция -->
+    <section class="admin-hero">
+      <div class="admin-hero__content">
+        <p class="section-card__eyebrow">Управление депутатами</p>
+        <h1>Зарегистрированные депутаты</h1>
+        <p class="admin-hero__text">Таблица депутатов со статусами, кнопки утверждения/отклонения, редактирование профиля и привязка к округу.</p>
+      </div>
+    </section>
+
+    <!-- Фильтры и поиск -->
+    <section class="admin-section">
+      <div class="admin-section__content">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+          <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+            <label class="form-label sr-only" for="search-deputies">Поиск депутатов</label>
+            <input type="text" id="search-deputies" class="form-input" placeholder="🔍 Поиск по ФИО или округу...">
+          </div>
+          <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+            <label class="form-label sr-only" for="filter-status">Фильтр по статусу</label>
+            <select id="filter-status" class="form-select">
+              <option value="">Все статусы</option>
+              <option value="pending">На рассмотрении</option>
+              <option value="approved">Утверждён</option>
+              <option value="rejected">Отклонён</option>
+            </select>
+          </div>
+          <button class="action-btn action-btn--primary">Применить фильтры</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Таблица депутатов -->
+    <section class="admin-section">
+      <div class="admin-section__header">
+        <h2 class="admin-section__title">Список депутатов</h2>
+        <div class="admin-section__actions">
+          <button class="action-btn action-btn--secondary action-btn--sm">📥 Экспорт CSV</button>
+        </div>
+      </div>
+      
+      <!-- Панель массовых действий (скрыта по умолчанию) -->
+      <div class="bulk-actions hidden">
+        <span class="bulk-actions__count">Выбрано: 0</span>
+        <div class="bulk-actions__buttons">
+          <button class="action-btn action-btn--success action-btn--sm">✓ Утвердить выбранные</button>
+          <button class="action-btn action-btn--danger action-btn--sm">✗ Отклонить выбранные</button>
+        </div>
+      </div>
+
+      <div class="admin-section__content">
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col"><input type="checkbox" class="table-checkbox" aria-label="Выбрать все"></th>
+                <th scope="col">ФИО</th>
+                <th scope="col">Email</th>
+                <th scope="col">Округ</th>
+                <th scope="col">Дата регистрации</th>
+                <th scope="col">Статус</th>
+                <th scope="col">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Депутат на рассмотрении -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td><strong>Иванов Иван Иванович</strong></td>
+                <td>ivanov@example.com</td>
+                <td>Не выбран</td>
+                <td>15.01.2025</td>
+                <td><span class="status-badge status-badge--pending">На рассмотрении</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm" title="Утвердить">✓</button>
+                  <button class="action-btn action-btn--danger action-btn--sm" title="Отклонить">✗</button>
+                  <button class="action-btn action-btn--secondary action-btn--sm" title="Редактировать">✎</button>
+                </td>
+              </tr>
+
+              <!-- Депутат на рассмотрении -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td><strong>Петрова Мария Сергеевна</strong></td>
+                <td>petrova@example.com</td>
+                <td>Не выбран</td>
+                <td>14.01.2025</td>
+                <td><span class="status-badge status-badge--pending">На рассмотрении</span></td>
+                <td>
+                  <button class="action-btn action-btn--success action-btn--sm" title="Утвердить">✓</button>
+                  <button class="action-btn action-btn--danger action-btn--sm" title="Отклонить">✗</button>
+                  <button class="action-btn action-btn--secondary action-btn--sm" title="Редактировать">✎</button>
+                </td>
+              </tr>
+
+              <!-- Утверждённый депутат -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td><strong>Сидоров Алексей Петрович</strong></td>
+                <td>sidorov@example.com</td>
+                <td>Округ №3</td>
+                <td>10.01.2025</td>
+                <td><span class="status-badge status-badge--approved">Утверждён</span></td>
+                <td>
+                  <button class="action-btn action-btn--secondary action-btn--sm" title="Редактировать профиль">✎ Профиль</button>
+                  <button class="action-btn action-btn--warning action-btn--sm" title="Привязать округ">🗺️ Округ</button>
+                </td>
+              </tr>
+
+              <!-- Утверждённый депутат -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td><strong>Козлова Елена Владимировна</strong></td>
+                <td>kozlova@example.com</td>
+                <td>Округ №7</td>
+                <td>08.01.2025</td>
+                <td><span class="status-badge status-badge--approved">Утверждён</span></td>
+                <td>
+                  <button class="action-btn action-btn--secondary action-btn--sm" title="Редактировать профиль">✎ Профиль</button>
+                  <button class="action-btn action-btn--warning action-btn--sm" title="Привязать округ">🗺️ Округ</button>
+                </td>
+              </tr>
+
+              <!-- Отклонённый депутат -->
+              <tr>
+                <td><input type="checkbox" class="table-checkbox"></td>
+                <td><strong>Смирнов Дмитрий Олегович</strong></td>
+                <td>smirnov@example.com</td>
+                <td>—</td>
+                <td>05.01.2025</td>
+                <td><span class="status-badge status-badge--rejected">Отклонён</span></td>
+                <td>
+                  <button class="action-btn action-btn--secondary action-btn--sm" title="Просмотреть причину">👁️ Причина</button>
+                  <button class="action-btn action-btn--secondary action-btn--sm" title="Повторно рассмотреть">↻ Повторить</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Модальное окно редактирования депутата -->
+    <section class="admin-modal" id="edit-deputy-modal" aria-labelledby="edit-deputy-title">
+      <div class="admin-modal__dialog">
+        <div class="admin-modal__header">
+          <div>
+            <h2 class="admin-modal__title" id="edit-deputy-title">Редактирование депутата</h2>
+            <p class="admin-modal__subtitle">Иванов Иван Иванович</p>
+          </div>
+          <button class="admin-modal__close" aria-label="Закрыть">×</button>
+        </div>
+
+        <div class="admin-modal__content">
+          <div class="form-group">
+            <label class="form-label" for="deputy-fio">ФИО</label>
+            <input type="text" id="deputy-fio" class="form-input" value="Иванов Иван Иванович">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="deputy-email">Email</label>
+            <input type="email" id="deputy-email" class="form-input" value="ivanov@example.com">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="deputy-phone">Телефон</label>
+            <input type="tel" id="deputy-phone" class="form-input" value="+7 (999) 000-00-00">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="deputy-district">Округ</label>
+            <select id="deputy-district" class="form-select">
+              <option value="">Не выбран</option>
+              <option value="1">Округ №1</option>
+              <option value="2">Округ №2</option>
+              <option value="3">Округ №3</option>
+              <option value="5">Округ №5</option>
+              <option value="7">Округ №7</option>
+            </select>
+            <p class="form-hint">Привязка депутата к избирательному округу</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="deputy-status">Статус</label>
+            <select id="deputy-status" class="form-select">
+              <option value="pending" selected>На рассмотрении</option>
+              <option value="approved">Утверждён</option>
+              <option value="rejected">Отклонён</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="admin-modal__footer">
+          <button class="action-btn action-btn--secondary">Отмена</button>
+          <button class="action-btn action-btn--primary">Сохранить изменения</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
