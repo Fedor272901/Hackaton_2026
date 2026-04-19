@@ -11,6 +11,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from geoalchemy2 import Geometry
+
+from geoalchemy2.shape import to_shape, from_shape
+from shapely.geometry import Point, Polygon, MultiPolygon, mapping
+import json
 
 from .database import Base
 
@@ -92,19 +97,39 @@ class RoleRequest(Base):
 # ---------------------
 # DISTRICTS
 # ---------------------
+
 class District(Base):
     __tablename__ = "districts"
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     description = Column(Text)
+    
+    geom = Column(Geometry('MULTIPOLYGON', srid=4326), nullable=True)
+    
+    @staticmethod
+    def from_geojson(geojson_data):
+        """Создание геометрии из GeoJSON (поддерживает Polygon и MultiPolygon)"""
+        if isinstance(geojson_data, str):
+            geojson_data = json.loads(geojson_data)
+        
+        geom_type = geojson_data.get('type')
+        coords = geojson_data['coordinates']
+        
+        if geom_type == 'Polygon':
+            # Конвертируем Polygon в MultiPolygon
+            return from_shape(MultiPolygon([Polygon(coords[0])]), srid=4326)
+        elif geom_type == 'MultiPolygon':
+            return from_shape(MultiPolygon([Polygon(p[0]) for p in coords]), srid=4326)
+        else:
+            raise ValueError(f"Unsupported geometry type: {geom_type}")
 
-    # позже будет PostGIS
-    geometry = Column(Text)
-
-    # связи
-    deputies = relationship("Deputy", back_populates="district")
-    requests = relationship("Request", back_populates="district")
+    def to_geojson(self):
+        """Конвертация в GeoJSON для фронта"""
+        if self.geom is not None:
+            shape = to_shape(self.geom)
+            return mapping(shape)
+        return None
 
 
 # ---------------------

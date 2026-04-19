@@ -14,9 +14,48 @@ from app.db.models import User
 from app.core.dependencies import get_current_active_user
 from app.core.permissions import require_admin
 from app.core.roles import Role
-
+from pydantic import BaseModel, Field
 
 router = APIRouter()
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6)
+
+
+@router.post("/me/change-password", status_code=204)
+def change_password(
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Сменить пароль текущего пользователя
+    
+    Доступно всем авторизованным пользователям.
+    
+    Параметры:
+    - old_password: текущий пароль
+    - new_password: новый пароль (минимум 6 символов)
+    
+    Пример запроса:
+    POST /users/me/change-password
+    {
+        "old_password": "старый_пароль",
+        "new_password": "новый_пароль"
+    }
+    """
+    from app.core.security import verify_password, hash_password
+    
+    # Проверяем старый пароль
+    if not verify_password(data.old_password, current_user.password_hash):
+        raise HTTPException(400, "Неверный текущий пароль")
+    
+    # Хешируем и сохраняем новый
+    current_user.password_hash = hash_password(data.new_password)
+    db.commit()
+    
+    return None
 
 
 @router.post("/")

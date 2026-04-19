@@ -4,16 +4,10 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.schemas.request_status import StatusCreate, StatusUpdate, StatusRead
 from app.crud import request_status as crud
+from app.db.database import get_db
+
 
 router = APIRouter()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.get("/", response_model=list[StatusRead])

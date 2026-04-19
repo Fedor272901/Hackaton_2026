@@ -5,10 +5,12 @@ from typing import List
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.district import (
-    DistrictCreate, 
-    DistrictUpdate, 
-    DistrictResponse, 
-    DistrictWithDeputies
+    DistrictCreate,
+    DistrictUpdate,
+    DistrictResponse,
+    DistrictWithDeputies,
+    PointCheckRequest,
+    PointCheckResponse
 )
 from app.schemas.deputy import DeputyResponse, AssignDeputyRequest
 from app.crud import district as crud_district
@@ -17,9 +19,8 @@ from app.core.permissions import require_admin
 
 router = APIRouter()
 
-
 # =========================================================
-# ПУБЛИЧНЫЕ РУЧКИ (просмотр)
+# ПУБЛИЧНЫЕ РУЧКИ
 # =========================================================
 
 @router.get("/", response_model=List[DistrictResponse])
@@ -28,52 +29,68 @@ def read_districts(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
 ):
-    """
-    Получить список всех округов
+    """Получить список всех округов"""
+    districts = crud_district.get_districts(db, skip=skip, limit=limit)
     
-    Параметры:
-    - skip: пропустить N записей (для пагинации)
-    - limit: количество записей (1-100)
+    # Добавляем GeoJSON в ответ
+    result = []
+    for d in districts:
+        district_dict = {
+            "id": d.id,
+            "name": d.name,
+            "description": d.description,
+            "geometry": d.to_geojson()
+        }
+        result.append(district_dict)
     
-    Пример: GET /districts/?skip=0&limit=20
-    """
-    return crud_district.get_districts(db, skip=skip, limit=limit)
-
+    return result
 
 @router.get("/{district_id}", response_model=DistrictWithDeputies)
-def read_district(
-    district_id: int,
-    db: Session = Depends(get_db),
-):
-    """
-    Получить округ по ID вместе со списком депутатов
-    
-    Пример: GET /districts/1
-    """
+def read_district(district_id: int, db: Session = Depends(get_db)):
+    """Получить округ по ID вместе с депутатами"""
     district = crud_district.get_district_with_deputies(db, district_id)
     if not district:
         raise HTTPException(404, "Округ не найден")
-    return district
-
-
-@router.get("/{district_id}/deputies", response_model=List[DeputyResponse])
-def read_deputies_by_district(
-    district_id: int,
-    db: Session = Depends(get_db),
-):
-    """
-    Получить список депутатов конкретного округа
     
-    Пример: GET /districts/1/deputies
-    """
-    district = crud_district.get_district(db, district_id)
-    if not district:
-        raise HTTPException(404, "Округ не найден")
-    return crud_district.get_deputies_by_district(db, district_id)
+    result = {
+        "id": district.id,
+        "name": district.name,
+        "description": district.description,
+        "geometry": district.to_geojson(),
+        "deputies": district.deputies
+    }
+    return result
 
+@router.post("/check-point", response_model=PointCheckResponse)
+def check_point(point_data: PointCheckRequest, db: Session = Depends(get_db)):
+    """
+    Проверить, входит ли точка в какой-либо округ
+    
+    Пример запроса:
+    {
+        "latitude": 54.5293,
+        "longitude": 36.2754
+    }
+    """
+    district = crud_district.check_point_in_district(
+        db, point_data.latitude, point_data.longitude
+    )
+    
+    if district:
+        return PointCheckResponse(
+            is_inside=True,
+            district_id=district.id,
+            district_name=district.name,
+            message=f"Точка находится в округе: {district.name}"
+        )
+    else:
+        return PointCheckResponse(
+            is_inside=False,
+            message="Точка не принадлежит ни одному округу"
+        )
 
 # =========================================================
-# АДМИНСКИЕ РУЧКИ (управление)
+# АДМИНСКИЕ РУЧКИ
 # =========================================================
 
 @router.post("/", response_model=DistrictResponse, status_code=201)
@@ -83,30 +100,35 @@ def create_district(
     current_user: User = Depends(require_admin)
 ):
     """
-    [АДМИН] Создать новый округ
-    
-    Требуется роль: admin
-    
-    Поля:
-    - name: название округа (обязательно)
-    - description: описание (опционально)
-    - geometry: геоданные в формате WKT/GeoJSON (опционально)
+    [АДМИН] Создать новый округ с геометрией
     
     Пример тела запроса:
     {
-        "name": "Центральный округ",
-        "description": "Центральная часть города",
-        "geometry": null
+        "name": "Ленинский округ",
+        "description": "Центральная часть Калуги",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [36.2500, 54.5100],
+                [36.3000, 54.5100],
+                [36.3000, 54.5400],
+                [36.2500, 54.5400],
+                [36.2500, 54.5100]
+            ]]
+        }
     }
-    
-    Пример curl:
-    curl -X POST http://localhost:8000/districts/ \
-      -H "Authorization: Bearer TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"name": "Центральный округ", "description": "Центр города"}'
     """
-    return crud_district.create_district(db, district_data)
-
+    try:
+        district = crud_district.create_district(db, district_data)
+        return {
+            "id": district.id,
+            "name": district.name,
+            "description": district.description,
+            "geometry": district.to_geojson()
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(400, f"Ошибка создания округа: {str(e)}")
 
 @router.patch("/{district_id}", response_model=DistrictResponse)
 def update_district(
@@ -116,28 +138,27 @@ def update_district(
     current_user: User = Depends(require_admin)
 ):
     """
-    [АДМИН] Обновить данные округа
+    [АДМИН] Обновить округ (включая геометрию)
     
-    Требуется роль: admin
-    
-    Все поля опциональны - обновятся только переданные.
-    
-    Поля для обновления:
-    - name: новое название
-    - description: новое описание
-    - geometry: новые геоданные
-    
-    Пример (обновить только название):
+    Пример обновления геометрии:
     PATCH /districts/1
     {
-        "name": "Северный округ"
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[...новые координаты...]]
+        }
     }
     """
     district = crud_district.update_district(db, district_id, district_update)
     if not district:
         raise HTTPException(404, "Округ не найден")
-    return district
-
+    
+    return {
+        "id": district.id,
+        "name": district.name,
+        "description": district.description,
+        "geometry": district.to_geojson()
+    }
 
 @router.delete("/{district_id}", status_code=204)
 def delete_district(
@@ -146,22 +167,18 @@ def delete_district(
     current_user: User = Depends(require_admin)
 ):
     """
-    [АДМИН] Удалить округ
-    
-    Требуется роль: admin
+    [АДМИН] Полностью удалить округ
     
     ВНИМАНИЕ:
-    - Удаление ПОЛНОЕ, без возможности восстановления
-    - Все депутаты округа останутся без привязки (district_id = NULL)
-    - Обращения округа будут удалены КАСКАДНО
-    
-    Пример: DELETE /districts/1
+    - Удаляется запись об округе
+    - Удаляются все геоданные из PostGIS
+    - Депутаты отвязываются (district_id = NULL)
+    - Обращения удаляются КАСКАДНО
     """
     success = crud_district.delete_district(db, district_id)
     if not success:
         raise HTTPException(404, "Округ не найден")
     return None
-
 
 @router.post("/assign-deputy", response_model=DeputyResponse, status_code=201)
 def assign_deputy(
@@ -172,28 +189,11 @@ def assign_deputy(
     """
     [АДМИН] Привязать депутата к округу
     
-    Требуется роль: admin
-    
-    Правила:
-    - Пользователь должен существовать
-    - Пользователь должен иметь роль "deputy"
-    - Если депутат уже привязан к другому округу - привязка обновится
-    
-    Поля:
-    - user_id: ID пользователя с ролью deputy
-    - district_id: ID округа
-    
-    Пример тела запроса:
+    Пример:
     {
         "user_id": 5,
         "district_id": 1
     }
-    
-    Пример curl:
-    curl -X POST http://localhost:8000/districts/assign-deputy \
-      -H "Authorization: Bearer TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"user_id": 5, "district_id": 1}'
     """
     deputy, error = crud_district.assign_deputy_to_district(
         db, data.user_id, data.district_id
@@ -203,27 +203,3 @@ def assign_deputy(
         raise HTTPException(400, error)
     
     return deputy
-
-
-@router.delete("/deputies/{user_id}", status_code=204)
-def remove_deputy(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
-):
-    """
-    [АДМИН] Отвязать депутата от округа
-    
-    Требуется роль: admin
-    
-    После отвязки:
-    - Депутат остается в системе с ролью "deputy"
-    - Депутат больше не привязан ни к какому округу
-    - Назначенные на него обращения остаются за ним
-    
-    Пример: DELETE /districts/deputies/5
-    """
-    success = crud_district.remove_deputy_from_district(db, user_id)
-    if not success:
-        raise HTTPException(404, "Депутат не найден или не привязан к округу")
-    return None
