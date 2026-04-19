@@ -29,10 +29,10 @@
 
       <div class="dashboard-header__profile">
         <div class="dashboard-header__user">
-          <div class="dashboard-header__avatar" aria-hidden="true">ИФ</div>
-          <div>
-            <p class="dashboard-header__name">ИМЯ ФАМИЛИЯ</p>
-            <p class="dashboard-header__role">Гражданин</p>
+          <div class="profile-card__avatar" id="user-initials">Загрузка...</div>
+          <div class="profile-card__info">
+            <p class="profile-card__name" id="user-full-name">Загрузка...</p>
+            <p class="profile-card__role" id="user-role">Загрузка...</p>
           </div>
         </div>
         <a class="button button--secondary button--compact" href="/templates/public/auth.html">Выйти</a>
@@ -47,47 +47,39 @@
             <h1 class="dashboard-hero__title" id="history-title">История обращений</h1>
             <p class="dashboard-hero__text">Следите за статусом своих заявок и открывайте подробности, чтобы увидеть ответ местного депутата.</p>
           </div>
-          <div class="dashboard-hero__status">
-            <span class="dashboard-hero__status-dot" aria-hidden="true"></span>
-            <span>СДЕЛАТЬ ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ СТАТУСА С ДАТОЙ И ВРЕМЕНЕМ</span>
-          </div>
         </div>
 
         <section class="summary-grid" aria-label="Краткая сводка по обращениям">
           <article class="summary-card">
-            <p class="summary-card__value">ЧИСЛО ОБРАЩЕНИЙ</p>
-            <p class="summary-card__label">Всего обращений</p>
-          </article>
-          <article class="summary-card">
-            <p class="summary-card__value">ЧИСЛО В РАБОТЕ И НА РАССМОТРЕНИИ</p>
-            <p class="summary-card__label">В работе и на рассмотрении</p>
+            <div class="summary-card__icon">📄</div>
+            <div class="summary-card__body">
+              <p class="summary-card__value" id="stats-total">0</p>
+              <p class="summary-card__label">Всего обращений</p>
+            </div>
           </article>
 
           <article class="summary-card">
-            <p class="summary-card__value">ЧИСЛО ВЫПОЛНЕННЫХ</p>
-            <p class="summary-card__label">Выполнено</p>
+            <div class="summary-card__icon" style="color: var(--color-warning);">⏳</div>
+            <div class="summary-card__body">
+              <p class="summary-card__value" id="stats-active">0</p>
+              <p class="summary-card__label">В работе или на рассмотрении</p>
+            </div>
           </article>
-        </section>
 
-        <section class="appeals-list" aria-label="Список обращений">
-          <article class="appeal-card">
-            <div class="appeal-card__meta">
-              <p class="appeal-card__number">ТЕСТОВЫЙ НОМЕР</p>
-              <p class="appeal-card__date">ТЕСТОВАЯ ДАТА</p>
-            </div>
-            <div class="appeal-card__body">
-              <span class="appeal-card__badge appeal-card__badge--roads">ТЕСТОВАЯ КАТЕГОРИЯ</span>
-              <h2 class="appeal-card__title">ТЕСТОВОЕ ОПИСАНИЕ КРАТКОЕ</h2>
-              <p class="appeal-card__excerpt">ТЕСТОВОЕ ПОДРОБНОЕ ОПИСАНИЕ</p>
-            </div>
-            <div class="appeal-card__status-wrap">
-              <span class="appeal-card__status appeal-card__status--progress">ТЕСТОВЫЙ СТАТУС</span>
-              <a class="text-link text-link--strong" href="#appeal-12345">Подробнее</a>
+          <article class="summary-card">
+            <div class="summary-card__icon" style="color: var(--color-success);">✅</div>
+            <div class="summary-card__body">
+              <p class="summary-card__value" id="stats-completed">0</p>
+              <p class="summary-card__label">Завершено</p>
             </div>
           </article>
         </section>
 
-        <aside class="empty-state" aria-labelledby="empty-state-title">
+        <section class="appeals-list" aria-label="Список обращений" id="appeals-container">
+          <p style="text-align: center; padding: 20px; color: var(--color-slate-500);">Загрузка истории обращений...</p>
+        </section>
+
+        <aside class="empty-state" id="empty-state-block" aria-labelledby="empty-state-title" style="display: none;">
           <div class="empty-state__illustration" aria-hidden="true">
             <span class="empty-state__ring"></span>
             <span class="empty-state__dot"></span>
@@ -104,7 +96,7 @@
           <div>
             <p class="section-card__eyebrow">Новая заявка</p>
             <h1 class="dashboard-hero__title" id="create-title">Подача обращения</h1>
-            <p class="dashboard-hero__text">Все поля обязательны, кроме фотографий. После интеграции форма может быть отправлена на `POST /api/v1/citizen/requests`.</p>
+            <p class="dashboard-hero__text">Все поля обязательны, кроме фотографий.</p>
           </div>
           <div class="dashboard-hero__tips">
             <p class="dashboard-hero__tip">Лучше короткий и конкретный заголовок</p>
@@ -199,7 +191,6 @@
                   placeholder="Например: г. Калуга, ул. Московская, д. 291/2"
                   autocomplete="street-address"
                   required>
-                <p class="form__hint">Поле может работать как автокомплит после подключения `GET /api/v1/districts/by-address`.</p>
                 <p class="form__error">Укажите адрес проблемы.</p>
               </div>
 
@@ -274,51 +265,48 @@
   </div>
 
   <!-- CSS-only модальные окна деталей обращения -->
-  <section class="modal" id="appeal-12345" aria-labelledby="appeal-12345-title">
+  <section class="modal" id="appeal-details-modal" aria-labelledby="modal-title">
     <div class="modal__dialog">
       <div class="modal__header">
         <div>
-          <p class="section-card__eyebrow">Детали обращения</p>
-          <h2 class="modal__title" id="appeal-12345-title">ТЕСТОВОЕ ОПИСАНИЕ КРАТКОЕ</h2>
-          <p class="modal__subtitle">ТЕСТОВАЯ ДАТА · ТЕСТОВЫЙ НОМЕР</p>
+          <p class="section-card__eyebrow">ДЕТАЛИ ОБРАЩЕНИЯ</p>
+          <h2 class="modal__title" id="modal-title">...</h2>
+          <p class="modal__subtitle" id="modal-subtitle">...</p>
         </div>
-        <a class="modal__close" href="#history-panel" aria-label="Закрыть окно с деталями обращения">Закрыть</a>
+        <a class="modal__close" href="#history-panel">Закрыть</a>
       </div>
 
-      <div class="modal__meta">
-        <span class="appeal-card__badge appeal-card__badge--roads">ТЕСТОВАЯ КАТЕГОРИЯ</span>
-        <span class="appeal-card__status appeal-card__status--progress">ТЕСТОВЫЙ СТАТУС</span>
-      </div>
+      <div class="modal__meta" id="modal-meta" style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center;">
+        </div>
 
-      <div class="modal__content">
-        <section class="modal__section">
-          <h3 class="modal__section-title">Описание проблемы</h3>
-          <p class="modal__text">ТЕСТОВОЕ ОПИСАНИЕ ПРОБЛЕМЫ</p>
-        </section>
-
-        <section class="modal__section modal__section--split">
+      <div class="modal__content" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="section-card">
+          <h3 class="modal__section-title" style="color: var(--color-slate-500); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 4px;">Краткое описание проблемы</h3>
+          <p class="modal__text" id="modal-title-brief" style="font-weight: 700; font-size: 1.1rem; margin-bottom: 12px;">...</p>
+          
+          <h3 class="modal__section-title" style="color: var(--color-slate-500); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 4px;">Подробное описание</h3>
+          <p class="modal__text" id="modal-description">...</p>
+        </div>
+        
+        <div class="section-card modal__section--split">
           <div>
             <h3 class="modal__section-title">Адрес</h3>
-            <p class="modal__text">ТЕСТОВЫЙ АДРЕС</p>
-            <a class="text-link text-link--strong" href="https://yandex.ru/maps/" target="_blank" rel="noopener noreferrer">Открыть карту</a>
+            <p class="modal__text" id="modal-address" style="margin-bottom: 8px;">...</p>
+            <a id="modal-map-link" class="text-link text-link--strong" href="#" target="_blank">Открыть карту</a>
           </div>
-          <div class="map-placeholder" role="img" aria-label="Статичная карта с адресом обращения"></div>
-        </section>
-
-        <section class="modal__section">
-          <h3 class="modal__section-title">Прикреплённые фото</h3>
+          <div class="map-placeholder" style="border-radius: 12px;"></div>
+        </div>
+        
+        <div class="section-card">
+          <h3 class="modal__section-title" style="margin-bottom: 12px;">Прикреплённые фото</h3>
           <div class="gallery-grid">
-            <div class="gallery-grid__item" role="img" aria-label="ТЕСТОВОЕ ФОТО 1"></div>
-            <div class="gallery-grid__item" role="img" aria-label="ТЕСТОВОЕ ФОТО 2"></div>
-            <div class="gallery-grid__item" role="img" aria-label="ТЕСТОВОЕ ФОТО 3"></div>
+            <div class="gallery-grid__item" style="border-radius: 12px; background: #f1f5f9;"></div>
+            <div class="gallery-grid__item" style="border-radius: 12px; background: #eff6ff;"></div>
+            <div class="gallery-grid__item" style="border-radius: 12px; background: #f0fdf4;"></div>
           </div>
-        </section>
+        </div>
 
-        <section class="response-card">
-          <p class="response-card__eyebrow">Ответ депутата</p>
-          <p class="response-card__text">ТЕСТОВЫЙ ОТВЕТ ДЕПУТАТА</p>
-          <p class="response-card__meta">ТЕСТОВАЯ ДАТА · ТЕСТОВЫЙ ДЕПУТАТ</p>
-        </section>
+        <div id="modal-response-container"></div>
       </div>
     </div>
   </section>
@@ -342,21 +330,16 @@
   <script>
     const API_URL = 'http://127.0.0.1:8000';
 
-    // Функция для проверки авторизации и загрузки данных профиля
+    // 1. Инициализация профиля
     async function initDashboard() {
       const token = localStorage.getItem('accessToken');
-
-      // 1. Проверка наличия токена
       if (!token) {
-        console.warn('Доступ запрещен: отсутствует токен');
-        window.location.href = 'auth.html'; 
+        window.location.href = 'auth.html';
         return;
       }
 
       try {
-        // 2. Запрос данных о пользователе (GET /users/me)
         const response = await fetch(`${API_URL}/users/me`, {
-          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -365,39 +348,242 @@
 
         if (response.ok) {
           const userData = await response.json();
-          
-          // 3. Обновляем UI данными из базы
-          // Ищем элемент с именем (в твоем шаблоне это .profile-card__name)
+          const initialsElement = document.getElementById('user-initials');
+          if (initialsElement) {
+            const f = userData.first_name ? userData.first_name[0].toUpperCase() : '';
+            const l = userData.last_name ? userData.last_name[0].toUpperCase() : '';
+            initialsElement.textContent = f + l;
+          }
+          const roleElement = document.getElementById('user-role');
+          if (roleElement) {
+            roleElement.textContent = userData.role?.name || userData.role || 'Гражданин';
+          }
           const nameElement = document.querySelector('.profile-card__name');
           if (nameElement) {
             nameElement.textContent = `${userData.first_name} ${userData.last_name}`;
           }
-
-          // Тут мы позже вызовем функцию загрузки обращений
-          // loadUserAppeals(); 
-
         } else {
-          // Если токен невалиден или просрочен (401), удаляем его и уходим на логин
-          localStorage.removeItem('accessToken');
-          window.location.href = 'auth.html';
+          logout();
         }
       } catch (err) {
-        console.error('Ошибка при загрузке профиля:', err);
+        console.error('Ошибка профиля:', err);
       }
     }
 
-    // Функция выхода
+    // 2. Обновление цифр статистики
+    async function updateSummaryStats() {
+      const token = localStorage.getItem('accessToken');
+      try {
+        const response = await fetch(`${API_URL}/requests/my`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const appeals = await response.json();
+          document.getElementById('stats-total').textContent = appeals.length;
+          document.getElementById('stats-active').textContent = appeals.filter(a => 
+            ['В работе', 'На рассмотрении'].includes(a.status.name)).length;
+          document.getElementById('stats-completed').textContent = appeals.filter(a => 
+            ['Завершено', 'Выполнено'].includes(a.status.name)).length;
+        }
+      } catch (err) { console.error('Ошибка статистики:', err); }
+    }
+
+    // 3. Рендеринг списка карточек
+    async function loadAppealsList() {
+      const token = localStorage.getItem('accessToken');
+      const container = document.getElementById('appeals-container');
+      if (!container) return;
+
+      try {
+        const response = await fetch(`${API_URL}/requests/my`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const appeals = await response.json();
+          if (appeals.length === 0) {
+            container.innerHTML = '<p style="text-align: center; padding: 20px;">У вас пока нет обращений.</p>';
+            return;
+          }
+
+          container.innerHTML = appeals.map(appeal => {
+            const date = new Date(appeal.created_at).toLocaleDateString('ru-RU');
+            let statusClass = 'appeal-card__status--progress';
+            if (appeal.status.name === 'В работе') {
+              statusClass = 'appeal-card__status--work';
+            } else if (['Выполнено', 'Завершено'].includes(appeal.status.name)) {
+              statusClass = 'appeal-card__status--done';
+            } else if (appeal.status.name === 'Отклонено') {
+              statusClass = 'appeal-card__status--rejected';
+            }
+
+            // Кодируем объект в строку для передачи в функцию, экранируя кавычки
+            const appealData = JSON.stringify(appeal).replace(/'/g, "&apos;");
+
+            return `
+              <article class="appeal-card">
+                <div class="appeal-card__meta">
+                  <p class="appeal-card__number">№${appeal.id}</p>
+                  <p class="appeal-card__date">${date}</p>
+                </div>
+                <div class="appeal-card__body">
+                  <span class="appeal-card__badge">${appeal.category?.name || 'Общее'}</span>
+                  <h2 class="appeal-card__title">${appeal.title}</h2>
+                  <p class="appeal-card__excerpt">${appeal.description.substring(0, 100)}${appeal.description.length > 100 ? '...' : ''}</p>
+                </div>
+                <div class="appeal-card__status-wrap">
+                  <span class="appeal-card__status ${statusClass}">${appeal.status.name}</span>
+                  <button class="text-link text-link--strong" 
+                          onclick='openAppealDetails(${appealData})' 
+                          style="background:none; border:none; padding:0; cursor:pointer; font:inherit; color:var(--color-primary-600);">
+                    Подробнее
+                  </button>
+                </div>
+              </article>`;
+          }).join('');
+        }
+      } catch (err) { console.error('Ошибка списка:', err); }
+    }
+
+    // 4. ФУНКЦИЯ ОТКРЫТИЯ МОДАЛКИ (АВТОМАТИЧЕСКИЙ ЗАПРОС СООБЩЕНИЙ)
+    async function openAppealDetails(appeal) {
+      const token = localStorage.getItem('accessToken');
+      const date = new Date(appeal.created_at).toLocaleDateString('ru-RU');
+      
+      // 1. Заполнение базовой информации
+      document.getElementById('modal-title').textContent = appeal.title;
+      document.getElementById('modal-subtitle').textContent = `${date} · №${appeal.id}`;
+      document.getElementById('modal-title-brief').textContent = appeal.title; 
+      document.getElementById('modal-description').textContent = appeal.description;
+      
+      // 2. Статусы и категории
+      let statusClass = 'appeal-card__status--progress';
+      if (appeal.status.name === 'В работе') statusClass = 'appeal-card__status--work';
+      if (['Выполнено', 'Завершено'].includes(appeal.status.name)) statusClass = 'appeal-card__status--done';
+      if (appeal.status.name === 'Отклонено') statusClass = 'appeal-card__status--rejected';
+
+      document.getElementById('modal-meta').innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 700; font-size: 0.85rem; color: var(--color-slate-600);">КАТЕГОРИЯ:</span>
+          <span class="appeal-card__badge" style="margin: 0;">${(appeal.category?.name || 'ОБЩЕЕ').toUpperCase()}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 700; font-size: 0.85rem; color: var(--color-slate-600);">СТАТУС:</span>
+          <span class="appeal-card__status ${statusClass}" style="margin: 0;">${appeal.status.name.toUpperCase()}</span>
+        </div>
+      `;
+
+      // 3. Адрес
+      const address = appeal.address || 'Адрес не указан';
+      document.getElementById('modal-address').textContent = address;
+      document.getElementById('modal-map-link').href = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`;
+      
+      // 3. Обработка фотографий (используем photo_urls)
+      const galleryContainer = document.querySelector('.gallery-grid');
+      if (galleryContainer) {
+        // Теперь берем массив photos, а не photo_urls
+        const photos = appeal.photos || [];
+
+        if (photos.length > 0) {
+          galleryContainer.innerHTML = photos.map(photo => {
+            // Берем URL из поля file_url объекта photo
+            let imgUrl = photo.file_url;
+            
+            // Если путь относительный, добавляем базовый URL API
+            if (imgUrl && !imgUrl.startsWith('http')) {
+              imgUrl = `${API_URL}${imgUrl}`;
+            }
+            
+            return `
+              <div class="gallery-grid__item" style="border-radius: 12px; overflow: hidden; background: #f1f5f9; height: 100px;">
+                <img src="${imgUrl}" 
+                    alt="Фото к обращению" 
+                    style="width: 100%; height: 100%; object-fit: cover; cursor: pointer; display: block;" 
+                    onclick="window.open('${imgUrl}', '_blank')">
+              </div>`;
+          }).join('');
+        } else {
+          // Если фотографий нет, показываем заглушку
+          galleryContainer.innerHTML = `
+            <p style="color: #94a3b8; grid-column: 1 / -1; font-style: italic; font-size: 0.9rem; padding: 10px 0;">
+              Фотографии не прикреплены
+            </p>
+          `;
+        }
+      }
+
+      // --- ЛОГИКА АВТОМАТИЧЕСКОГО ПОЛУЧЕНИЯ ОТВЕТА ---
+      const responseContainer = document.getElementById('modal-response-container');
+      responseContainer.innerHTML = '<p style="color: #64748b; font-style: italic; padding: 20px;">Загрузка ответа...</p>';
+
+      try {
+        const res = await fetch(`${API_URL}/requests/${appeal.id}/messages`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const messages = await res.json();
+          
+          // Берем первое сообщение из списка
+          const officialMessage = messages.length > 0 ? messages[0] : null;
+
+          if (officialMessage && officialMessage.text) {
+            const answerDate = new Date(officialMessage.created_at).toLocaleDateString('ru-RU');
+            
+            // ИЗВЛЕКАЕМ ИМЯ И ФАМИЛИЮ ИЗ ОБЪЕКТА USER ВНУТРИ СООБЩЕНИЯ
+            const user = officialMessage.user;
+            const authorName = user 
+              ? `${user.first_name} ${user.last_name}`.trim() 
+              : "АДМИНИСТРАЦИЯ";
+
+            responseContainer.innerHTML = `
+              <div class="section-card" style="border: 2px solid #3b82f61a; background: #fff; border-radius: 16px; padding: 20px; margin-top: 10px;">
+                <h3 class="modal__section-title" style="color: #3b82f6; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem;">
+                  ОТВЕТ ДЕПУТАТА
+                </h3>
+                <p class="modal__text" style="margin-bottom: 8px; line-height: 1.5; color: #1e293b;">
+                  ${officialMessage.text}
+                </p>
+                <p style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; margin-top: 12px;">
+                  ${answerDate} · ${authorName.toUpperCase()}
+                </p>
+              </div>
+            `;
+          } else {
+            responseContainer.innerHTML = `
+              <div style="padding: 20px; background: #f8fafc; border-radius: 16px; border: 1px dashed #cbd5e1; margin-top: 10px;">
+                <p style="color: #64748b; font-style: italic; margin: 0; font-size: 0.9rem;">
+                  Официальный ответ еще подготавливается.
+                </p>
+              </div>
+            `;
+          }
+        }
+      } catch (err) {
+        console.error('Ошибка загрузки сообщений:', err);
+        responseContainer.innerHTML = '<p style="color: red; padding: 20px;">Ошибка связи с сервером.</p>';
+      }
+
+      window.location.hash = 'appeal-details-modal';
+    }
+
     function logout() {
       localStorage.removeItem('accessToken');
       window.location.href = 'auth.html';
     }
 
-    // Запуск при загрузке страницы
+    // Единый запуск
     document.addEventListener('DOMContentLoaded', () => {
       initDashboard();
-      
-      // Привязываем кнопку выхода, если она есть (например, в профиле)
-      const logoutBtn = document.querySelector('.profile-card__logout'); // замени на свой класс
+      updateSummaryStats();
+      loadAppealsList();
+      if (window.location.hash === '#appeal-details-modal') {
+          // Поскольку после перезагрузки список еще не загружен, 
+          // нам нужно либо дождаться загрузки списка, либо просто убрать хэш,
+          // чтобы не показывать пустое окно пользователю.
+          window.location.hash = ''; 
+      }
+
+      const logoutBtn = document.querySelector('.profile-card__logout');
       if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
           e.preventDefault();
