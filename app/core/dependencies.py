@@ -1,7 +1,8 @@
 from jose import jwt, JWTError
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.core.config import SECRET_KEY, ALGORITHM
 from app.db.database import get_db
@@ -60,3 +61,53 @@ def get_current_active_user(current_user: User = Depends(get_current_user)):
     -     raise HTTPException(status_code=403, detail="User is inactive")
     """
     return current_user
+
+
+async def get_optional_user_from_token(request: Request) -> Optional[dict]:
+    """
+    Получить текущего пользователя из токена в cookies для шаблонов.
+
+    Эта функция пытается извлечь пользователя из cookies с токеном.
+    Если пользователь не авторизован или токен невалиден, возвращает None.
+
+    Возвращает словарь с данными пользователя или None.
+    """
+    try:
+        db = next(get_db())
+
+        token = request.cookies.get('access_token')
+
+        if not token:
+            return None
+
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = int(payload.get("sub"))
+
+            if user_id is None:
+                return None
+
+            user = get_user_by_id(db, user_id)
+
+            if not user:
+                return None
+
+            return {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role.value if hasattr(user.role, 'value') else str(user.role),
+                'is_active': user.is_active,
+            }
+
+        except (JWTError, ValueError, TypeError):
+            return None
+
+    except Exception:
+        return None
+    finally:
+        try:
+            db.close()
+        except:
+            pass
