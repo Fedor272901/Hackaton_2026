@@ -106,6 +106,8 @@ venv.bak/
 .vs/
 # IDE
 .idea/
+.vs/
+*.slnx
 
 # OS generated files
 .DS_Store
