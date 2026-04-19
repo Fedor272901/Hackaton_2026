@@ -4,17 +4,12 @@ from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryRead
 from app.crud import category as crud
+from app.db.database import get_db
+
 
 router = APIRouter()
 
-
 # зависимость для БД — такой же стиль, как в users.py у команды
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.get("/", response_model=list[CategoryRead])
