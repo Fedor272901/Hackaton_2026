@@ -13,6 +13,10 @@ from app.crud.request import get_requests, get_request_categories, get_request_s
 from app.crud.district import get_districts
 from app.crud.deputy import get_deputies
 
+# Импортируем функцию регистрации кастомных фильтров Jinja2
+# Фильтры нужны для форматирования дат, статусов и безопасного рендеринга HTML в шаблонах
+from app.filters import register_jinja_filters
+
 
 # НАСТРОЙКА ШАБЛОНОВ Jinja2
 # Указываем путь к директории с HTML-шаблонами.
@@ -32,6 +36,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Подключаем API роутер (уже существующие endpoints)
 app.include_router(api_router)
+
+# РЕГИСТРАЦИЯ КАСТОМНЫХ ФИЛЬТРОВ JINJA2
+# Регистрируем наши кастомные фильтры для использования в шаблонах.
+# Это должно быть сделано ПОСЛЕ создания templates и ДО подключения pages_router.
+# Фильтры становятся доступными глобально во всех шаблонах.
+register_jinja_filters(templates)
 
 
 # СОЗДАНИЕ РОУТЕРА ДЛЯ HTML СТРАНИЦ
