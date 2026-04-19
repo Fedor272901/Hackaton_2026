@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Depends, APIRouter
+from fastapi.responses import Response, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.api_router import api_router
@@ -16,6 +17,9 @@ from app.crud.deputy import get_deputies
 # Импортируем функцию регистрации кастомных фильтров Jinja2
 # Фильтры нужны для форматирования дат, статусов и безопасного рендеринга HTML в шаблонах
 from app.filters import register_jinja_filters
+
+# Импортируем функцию для получения текущего пользователя из токена
+from app.core.dependencies import get_optional_user_from_token
 
 
 # НАСТРОЙКА ШАБЛОНОВ Jinja2
@@ -43,6 +47,20 @@ app.include_router(api_router)
 # Фильтры становятся доступными глобально во всех шаблонах.
 register_jinja_filters(templates)
 
+# MIDDLEWARE ДЛЯ ДОБАВЛЕНИЯ CURRENT_USER В КОНТЕКСТ ЗАПРОСА
+# Этот middleware автоматически добавляет current_user в request.state
+# для каждого запроса, что делает переменную доступной в шаблонах
+@app.middleware("http")
+async def add_current_user_to_state(request: Request, call_next):
+    """
+    Middleware для добавления текущего пользователя в контекст запроса.
+
+    Извлекает токен из cookies и получает данные пользователя.
+    Добавляет current_user в request.state для использования в шаблонах.
+    """
+    request.state.current_user = await get_optional_user_from_token(request)
+    response = await call_next(request)
+    return response
 
 # СОЗДАНИЕ РОУТЕРА ДЛЯ HTML СТРАНИЦ
 # Выносим HTML-роуты в отдельный router для лучшей организации кода.
@@ -188,7 +206,24 @@ def prepare_admin_context(db: Session):
 #
 # request обязателен в context для работы url_for() в шаблонах.
 
-@pages_router.get("/")
+@pages_router.get("/auth", name="auth")
+async def auth_page(request: Request, db: Session = Depends(get_db)):
+    """
+    Страница авторизации (публичная зона)
+
+    Точка входа для неавторизованных пользователей.
+    Показывает общую информацию о сервисе и форму входа.
+    """
+    return templates.TemplateResponse(
+        request,
+        "public/auth.html",
+        {
+            "current_user": request.state.current_user,
+        }
+    )
+
+
+@pages_router.get("/", name="home")
 async def home_page(request: Request, db: Session = Depends(get_db)):
     """
     Главная страница (публичная зона)
@@ -201,12 +236,14 @@ async def home_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
     request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
     "public/auth.html",         # ← 2-й аргумент: путь к шаблону
-    {}                          # ← 3-й аргумент: контекст (словарь с данными)
+    {
+        "current_user": request.state.current_user,
+    }                          # ← 3-й аргумент: контекст (словарь с данными)
 )
 
 
-@pages_router.get("/citizen")
-@pages_router.get("/citizen/dashboard")
+@pages_router.get("/citizen", name="citizen_dashboard")
+@pages_router.get("/citizen/dashboard", name="citizen_dashboard")
 async def citizen_dashboard(request: Request, db: Session = Depends(get_db)):
     """
     Личный кабинет гражданина
@@ -231,6 +268,9 @@ async def citizen_dashboard(request: Request, db: Session = Depends(get_db)):
     # Добавляем request обязательно для работы Jinja2
     context["request"] = request
 
+    # Добавляем current_user из middleware для использования в шаблонах
+    context["current_user"] = request.state.current_user
+
     # Рендерим шаблон с подготовленными данными
     # Шаблон ожидает переменные: requests, categories, statuses, total, etc.
     return templates.TemplateResponse(
@@ -240,7 +280,7 @@ async def citizen_dashboard(request: Request, db: Session = Depends(get_db)):
 )
 
 
-@pages_router.get("/citizen/create")
+@pages_router.get("/citizen/create", name="citizen_create_appeal")
 async def citizen_create_appeal(request: Request, db: Session = Depends(get_db)):
     """
     Страница создания обращения (отдельная страница для формы)
@@ -263,6 +303,7 @@ async def citizen_create_appeal(request: Request, db: Session = Depends(get_db))
         "categories": categories,
         "districts": districts,
         "page_title": "Подать обращение",
+        "current_user": request.state.current_user,
     }
 
     return templates.TemplateResponse(
@@ -272,7 +313,81 @@ async def citizen_create_appeal(request: Request, db: Session = Depends(get_db))
 )
 
 
-@pages_router.get("/citizen/appeal/{appeal_id}")
+@pages_router.post("/citizen/create")
+async def citizen_submit_appeal(request: Request, db: Session = Depends(get_db)):
+    """
+    Обработка формы создания обращения
+
+    Принимает данные из формы:
+    - category: категория обращения
+    - title: заголовок
+    - description: описание
+    - address: адрес
+    - photos: файлы изображений
+    - truth_confirmed: подтверждение достоверности
+
+    После успешного создания перенаправляет на dashboard.
+    """
+    form_data = await request.form()
+
+    category_code = form_data.get("category")
+    title = form_data.get("title")
+    description = form_data.get("description")
+    address = form_data.get("address")
+    truth_confirmed = form_data.get("truth_confirmed")
+    photos = form_data.getlist("photos")
+
+    from fastapi import HTTPException, UploadFile
+    from app.crud.request import create_request
+    from app.schemas.requests import RequestCreate
+    from app.crud.district import get_district_by_address
+
+    if not category_code or not title or not description or not address:
+        raise HTTPException(status_code=400, detail="Все обязательные поля должны быть заполнены")
+
+    if not truth_confirmed:
+        raise HTTPException(status_code=400, detail="Необходимо подтвердить достоверность данных")
+
+    photo_urls = []
+    for photo in photos:
+        if isinstance(photo, UploadFile) and photo.filename:
+            photo_urls.append(f"/static/uploads/{photo.filename}")
+
+    user_id = request.state.current_user.get("id") if request.state.current_user else None
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+
+    district = get_district_by_address(db, address)
+    district_id = district.id if district else None
+
+    from app.crud.category import get_category_by_code
+    category = get_category_by_code(db, category_code)
+    category_id = category.id if category else None
+
+    if not category_id:
+        raise HTTPException(status_code=400, detail="Неверная категория обращения")
+
+    request_data = RequestCreate(
+        district_id=district_id,
+        category_id=category_id,
+        title=title,
+        description=description,
+        address=address,
+        photos=photo_urls
+    )
+
+    new_appeal = create_request(
+        db=db,
+        request_data=request_data,
+        user_id=user_id
+    )
+
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url="/citizen/dashboard", status_code=303)
+
+
+@pages_router.get("/citizen/appeal/{appeal_id}", name="appeal_detail")
 async def citizen_appeal_detail(request: Request, appeal_id: int, db: Session = Depends(get_db)):
     """
     Детали конкретного обращения
@@ -308,6 +423,7 @@ async def citizen_appeal_detail(request: Request, appeal_id: int, db: Session = 
         "appeal": appeal,
         "messages": messages_data["items"],
         "status_history": status_history,
+        "current_user": request.state.current_user,
     }
 
     return templates.TemplateResponse(
@@ -317,8 +433,8 @@ async def citizen_appeal_detail(request: Request, appeal_id: int, db: Session = 
 )
 
 
-@pages_router.get("/deputy")
-@pages_router.get("/deputy/dashboard")
+@pages_router.get("/deputy", name="deputy_dashboard")
+@pages_router.get("/deputy/dashboard", name="deputy_dashboard")
 async def deputy_dashboard(request: Request, db: Session = Depends(get_db), district_id: int = None):
     """
     Рабочий кабинет депутата
@@ -338,6 +454,7 @@ async def deputy_dashboard(request: Request, db: Session = Depends(get_db), dist
     """
     context = prepare_deputy_context(db, district_id)
     context["request"] = request
+    context["current_user"] = request.state.current_user
 
     return templates.TemplateResponse(
     request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
@@ -346,7 +463,7 @@ async def deputy_dashboard(request: Request, db: Session = Depends(get_db), dist
 )
 
 
-@pages_router.get("/deputy/appeal/{appeal_id}")
+@pages_router.get("/deputy/appeal/{appeal_id}", name="deputy_appeal_detail")
 async def deputy_appeal_detail(request: Request, appeal_id: int, db: Session = Depends(get_db)):
     """
     Детали обращения для депутата
@@ -374,6 +491,7 @@ async def deputy_appeal_detail(request: Request, appeal_id: int, db: Session = D
         # Флаги для отображения кнопок действий
         "can_take_to_work": appeal.status and appeal.status.code == "new",
         "can_respond": True,  # Всегда можно ответить
+        "current_user": request.state.current_user,
     }
 
     return templates.TemplateResponse(
@@ -383,7 +501,7 @@ async def deputy_appeal_detail(request: Request, appeal_id: int, db: Session = D
 )
 
 
-@pages_router.get("/deputy/statistics")
+@pages_router.get("/deputy/statistics", name="deputy_statistics")
 async def deputy_statistics(request: Request, db: Session = Depends(get_db), district_id: int = None):
     """
     Статистика работы депутата
@@ -396,6 +514,7 @@ async def deputy_statistics(request: Request, db: Session = Depends(get_db), dis
     context = prepare_deputy_context(db, district_id)
     context["request"] = request
     context["page_title"] = "Статистика"
+    context["current_user"] = request.state.current_user
 
     return templates.TemplateResponse(
     request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
@@ -404,8 +523,8 @@ async def deputy_statistics(request: Request, db: Session = Depends(get_db), dis
 )
 
 
-@pages_router.get("/admin")
-@pages_router.get("/admin/dashboard")
+@pages_router.get("/admin", name="admin_dashboard")
+@pages_router.get("/admin/dashboard", name="admin_dashboard")
 async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     """
     Панель администратора
@@ -423,6 +542,7 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     """
     context = prepare_admin_context(db)
     context["request"] = request
+    context["current_user"] = request.state.current_user
 
     return templates.TemplateResponse(
     request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
@@ -431,7 +551,7 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 )
 
 
-@pages_router.get("/admin/districts")
+@pages_router.get("/admin/districts", name="admin_districts")
 async def admin_districts(request: Request, db: Session = Depends(get_db)):
     """
     Управление округами
@@ -447,6 +567,7 @@ async def admin_districts(request: Request, db: Session = Depends(get_db)):
         "request": request,
         "districts": districts,
         "page_title": "Управление округами",
+        "current_user": request.state.current_user,
     }
 
     return templates.TemplateResponse(
@@ -456,7 +577,7 @@ async def admin_districts(request: Request, db: Session = Depends(get_db)):
 )
 
 
-@pages_router.get("/admin/deputies")
+@pages_router.get("/admin/deputies", name="admin_deputies")
 async def admin_deputies(request: Request, db: Session = Depends(get_db)):
     """
     Управление депутатами
@@ -474,6 +595,7 @@ async def admin_deputies(request: Request, db: Session = Depends(get_db)):
         "deputies": deputies,
         "districts": districts,
         "page_title": "Управление депутатами",
+        "current_user": request.state.current_user,
     }
 
     return templates.TemplateResponse(
@@ -483,7 +605,7 @@ async def admin_deputies(request: Request, db: Session = Depends(get_db)):
 )
 
 
-@pages_router.get("/admin/moderation")
+@pages_router.get("/admin/moderation", name="admin_moderation")
 async def admin_moderation(request: Request, db: Session = Depends(get_db)):
     """
     Модерация обращений
@@ -501,6 +623,7 @@ async def admin_moderation(request: Request, db: Session = Depends(get_db)):
         "requests": requests_data["items"],
         "total": requests_data["total"],
         "page_title": "Модерация обращений",
+        "current_user": request.state.current_user,
     }
 
     return templates.TemplateResponse(
@@ -510,7 +633,7 @@ async def admin_moderation(request: Request, db: Session = Depends(get_db)):
 )
 
 
-@pages_router.get("/admin/statistics")
+@pages_router.get("/admin/statistics", name="admin_statistics")
 async def admin_statistics(request: Request, db: Session = Depends(get_db)):
     """
     Расширенная статистика системы
@@ -523,12 +646,25 @@ async def admin_statistics(request: Request, db: Session = Depends(get_db)):
     context = prepare_admin_context(db)
     context["request"] = request
     context["page_title"] = "Статистика системы"
+    context["current_user"] = request.state.current_user
 
     return templates.TemplateResponse(
     request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
     "admin/statistics.html",    # ← 2-й аргумент: путь к шаблону
     context                     # ← 3-й аргумент: контекст (словарь с данными)
 )
+
+
+@pages_router.get("/logout", name="logout")
+async def logout(request: Request):
+    """
+    Выход из системы
+
+    Удаляет токен аутентификации из cookies и перенаправляет на главную страницу.
+    """
+    response = RedirectResponse(url="/", status_code=303)
+    response.delete_cookie(key="access_token")
+    return response
 
 
 # Подключаем роутер страниц к основному приложению
