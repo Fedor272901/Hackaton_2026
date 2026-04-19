@@ -1,5 +1,3 @@
-# Импортируем FastAPI и Request для обработки HTTP-запросов
-# Also import Depends для внедрения зависимостей (например, сессии БД)
 from fastapi import FastAPI, Request, Depends, APIRouter
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
