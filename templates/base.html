@@ -4,7 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Система обращений{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+      <!--
+    Порядок подключения CSS критически важен из-за каскадности и зависимостей:
+    1. variables.css - должен быть первым, так как содержит CSS-переменные (--color-primary и др.)
+    2. base.css - использует переменные для сброса стилей и глобальных настроек
+    3. layout.css - использует переменные и базовые стили для сетки и макета
+    4. components.css - использует все предыдущие стили для конкретных компонентов UI
+
+    Если изменить порядок, переменные могут быть не определены к моменту их использования,
+    что приведет к неправильному отображению сайта.
+        -->
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/01-variables.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/02-base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/03-layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/04-components.css') }}">
+
     {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}body-bg{% endblock %}">
