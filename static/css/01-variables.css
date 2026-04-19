@@ -1,0 +1,204 @@
+/**
+ * Design System Variables
+ *
+ * Этот файл содержит все ключевые параметры текущего стиля проекта.
+ * Значения взяты из существующих CSS файлов для сохранения визуального стиля.
+ *
+ * Источники:
+ * - static/css/styles.css (основной файл, 145KB)
+ * - static/css/style.css (60KB)
+ * - static/css/styleactual.css (35KB)
+ * - static/css/styles2.css (35KB)
+ */
+
+:root {
+    /* ============================================
+       ЦВЕТА (COLORS)
+       ============================================ */
+
+    /* Primary Colors - Основная синяя палитра */
+    --color-primary: #2563eb;           /* Из styles.css строка 2, style.css строка 2, styleactual.css строка 2, styles2.css строка 2 */
+    --color-primary-strong: #1d4ed8;    /* Из styles.css строка 3, style.css строка 3, styleactual.css строка 3, styles2.css строка 3 */
+    --color-primary-soft: #dbeafe;      /* Из styles.css строка 4, style.css строка 4, styleactual.css строка 4, styles2.css строка 4 */
+
+    /* Success Colors - Зелёные цвета для успешных действий */
+    --color-success: #16a34a;           /* Из styles.css строка 5, style.css строка 5, styleactual.css строка 5, styles2.css строка 5 */
+    --color-success-soft: #dcfce7;      /* Из styles.css строка 6, style.css строка 6, styleactual.css строка 6, styles2.css строка 6 */
+
+    /* Warning Colors - Жёлтые/оранжевые цвета для предупреждений */
+    --color-warning: #ca8a04;           /* Из styles.css строка 7, style.css строка 7, styleactual.css строка 7, styles2.css строка 7 */
+    --color-warning-soft: #fef3c7;      /* Из styles.css строка 8, style.css строка 8, styleactual.css строка 8, styles2.css строка 8 */
+
+    /* Danger Colors - Красные цвета для ошибок и опасных действий */
+    --color-danger: #dc2626;            /* Из styles.css строка 9, style.css строка 9, styleactual.css строка 9, styles2.css строка 9 */
+    --color-danger-soft: #fee2e2;       /* Из styles.css строка 10, style.css строка 10, styleactual.css строка 10, styles2.css строка 10 */
+
+    /* Slate Colors - Нейтральная серо-синяя палитра (от тёмного к светлому) */
+    --color-slate-950: #0f172a;         /* Из styles.css строка 11, style.css строка 11, styleactual.css строка 11, styles2.css строка 11 */
+    --color-slate-800: #1e293b;         /* Из styles.css строка 12, style.css строка 12, styleactual.css строка 12, styles2.css строка 12 */
+    --color-slate-700: #334155;         /* Из styles.css строка 13, style.css строка 13, styleactual.css строка 13, styles2.css строка 13 */
+    --color-slate-600: #475569;         /* Из styles.css строка 14, style.css строка 14, styleactual.css строка 14, styles2.css строка 14 */
+    --color-slate-500: #64748b;         /* Из styles.css строка 15, style.css строка 15, styleactual.css строка 15, styles2.css строка 15 */
+    --color-slate-400: #94a3b8;         /* Из styles.css строка 16, style.css строка 16, styleactual.css строка 16, styles2.css строка 16 */
+    --color-slate-300: #cbd5e1;         /* Из styles.css строка 17, style.css строка 17, styleactual.css строка 17, styles2.css строка 17 */
+    --color-slate-200: #e2e8f0;         /* Из styles.css строка 18, style.css строка 18, styleactual.css строка 18, styles2.css строка 18 */
+    --color-slate-100: #f1f5f9;         /* Из styles.css строка 19, style.css строка 19, styleactual.css строка 19, styles2.css строка 19 */
+    --color-slate-50: #f8fafc;          /* Из styles.css строка 20, style.css строка 20, styleactual.css строка 20, styles2.css строка 20 */
+
+    /* White */
+    --color-white: #ffffff;             /* Из styles.css строка 21, style.css строка 21, styleactual.css строка 21, styles2.css строка 21 */
+
+    /* ============================================
+       ТЕНИ (SHADOWS)
+       ============================================ */
+
+    /* Основные тени для карточек и элементов */
+    --shadow-lg: 0 24px 50px rgba(15, 23, 42, 0.14);   /* Из styles.css строка 22, style.css строка 22, styleactual.css строка 22, styles2.css строка 22 */
+    --shadow-md: 0 18px 34px rgba(15, 23, 42, 0.1);    /* Из styles.css строка 23, style.css строка 23, styleactual.css строка 23, styles2.css строка 23 */
+    --shadow-sm: 0 10px 22px rgba(15, 23, 42, 0.08);   /* Из styles.css строка 24, style.css строка 24, styleactual.css строка 24, styles2.css строка 24 */
+
+    /* Примечание: В style.css строка 31 есть альтернативный --shadow-md: 0 18px 34px rgba(23, 37, 71, 0.1); */
+
+    /* ============================================
+       РАДИУСЫ СКРУГЛЕНИЯ (BORDER RADIUS)
+       ============================================ */
+
+    /* Основные радиусы для кнопок, карточек и других элементов */
+    --radius-xl: 28px;    /* Из styles.css строка 25, style.css строка 25, styleactual.css строка 25, styles2.css строка 25 */
+    --radius-lg: 20px;    /* Из styles.css строка 26, style.css строка 26, styleactual.css строка 26, styles2.css строка 26 */
+    --radius-md: 16px;    /* Из styles.css строка 27, style.css строка 27, styleactual.css строка 27, styles2.css строка 27 */
+    --radius-sm: 12px;    /* Из styles.css строка 28, style.css строка 28, styleactual.css строка 28, styles2.css строка 28 */
+
+    /* Специальные радиусы */
+    --btn-radius-pill: 999px;  /* Из styles.css строка 155 - полностью скруглённые кнопки */
+    --input-radius: 7px;       /* Из styles.css строка 397 - радиус полей ввода */
+    --checkbox-radius: 4px;    /* Из styles.css строка 406 - радиус чекбоксов */
+
+    /* ============================================
+       ОТСТУПЫ (PADDING/MARGIN)
+       ============================================ */
+
+    /* Отступы для кнопок */
+    --btn-padding-y: 0.8rem;        /* Из styles.css строка 153 - вертикальный отступ кнопки */
+    --btn-padding-x: 1.15rem;       /* Из styles.css строка 153 - горизонтальный отступ кнопки */
+    --btn-padding-compact: 1rem;    /* Из styles.css строка 188 - компактный горизонтальный отступ */
+
+    /* Отступы для полей ввода */
+    --input-padding-y: 0.95rem;     /* Из styles.css строка 270 - вертикальный отступ input */
+    --input-padding-x: 1rem;        /* Из styles.css строка 270 - горизонтальный отступ input */
+
+    /* Отступы для карточек */
+    --card-padding: 1.5rem;         /* Из styles.css строка 109 - базовый отступ карточки */
+    --card-padding-large: clamp(1.5rem, 3vw, 2.5rem);  /* Из styles.css строка 496 - большой отступ секции */
+
+    /* Стандартные отступы */
+    --margin-xs: 0.25rem;           /* Из styles.css строка 327, 382 */
+    --margin-sm: 0.5rem;            /* Из styles.css строка 128 */
+    --margin-md: 1rem;              /* Из styles.css строка 440, 528 */
+    --margin-lg: 1.25rem;           /* Из styles.css строка 528 */
+    --margin-xl: 1.5rem;            /* Из styles.css строка 109 */
+
+    /* ============================================
+       ШРИФТЫ (TYPOGRAPHY)
+       ============================================ */
+
+    /* Семейство шрифтов */
+    --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;  /* Из styles.css строка 51 */
+
+    /* Базовая высота строки */
+    --line-height-base: 1.5;         /* Из styles.css строка 52 */
+    --line-height-tight: 1.15;       /* Из styles.css строка 141 - для заголовков */
+    --line-height-heading: 0.98;     /* Из styles.css строка 513 - для крупных заголовков */
+    --line-height-display: 1.05;     /* Из styles.css строка 807 - для display текста */
+    --line-height-prose: 1.7;
+
+    /* Размеры шрифтов */
+    --font-size-xs: 0.75rem;         /* Из styles.css строка 1677 - 12px */
+    --font-size-sm: 0.8rem;          /* Из styles.css строка 130, 1642 - 12.8px */
+    --font-size-base: 0.95rem;       /* Из styles.css строка 263 - 15.2px */
+    --font-size-md: 1rem;            /* Из styles.css строка 521, 1048 - 16px */
+    --font-size-lg: 1.1rem;          /* Из styles.css строка 576, 904 - 17.6px */
+    --font-size-xl: 1.3rem;          /* Из styles.css строка 648 - 20.8px */
+    --font-size-2xl: 2rem;           /* Из styles.css строка 512 (clamp), 856 - 32px */
+    --font-size-3xl: clamp(1.9rem, 3vw, 2.7rem);  /* Из styles.css строка 806 */
+    --font-size-4xl: clamp(2rem, 5vw, 4rem);      /* Из styles.css строка 512 */
+
+    /* ============================================
+       СТИЛИ КНОПОК (BUTTON STYLES)
+       ============================================ */
+
+    /* Primary Button - Основная кнопка */
+    --btn-primary-bg: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));  /* Из styles.css строка 172 */
+    --btn-primary-color: var(--color-white);                    /* Из styles.css строка 171 */
+    --btn-primary-shadow: 0 14px 30px rgba(37, 99, 235, 0.28);  /* Из styles.css строка 173 */
+    --btn-primary-hover-shadow: 0 18px 34px rgba(37, 99, 235, 0.34);  /* Из styles.css строка 210 */
+
+    /* Secondary Button - Вторичная кнопка */
+    --btn-secondary-bg: rgba(255, 255, 255, 0.92);              /* Из styles.css строка 178 */
+    --btn-secondary-bg-hover: rgba(255, 255, 255, 0.98);        /* Из styles.css строка 219 */
+    --btn-secondary-color: var(--color-slate-800);              /* Из styles.css строка 177 */
+    --btn-secondary-border: rgba(148, 163, 184, 0.35);          /* Из styles.css строка 179 */
+    --btn-secondary-border-hover: rgba(37, 99, 235, 0.28);      /* Из styles.css строка 218 */
+
+    /* Disabled Button - Неактивная кнопка */
+    --btn-disabled-bg: var(--color-slate-100);                  /* Из styles.css строка 226 */
+    --btn-disabled-color: var(--color-slate-400);               /* Из styles.css строка 225 */
+    --btn-disabled-border: rgba(203, 213, 225, 0.8);            /* Из styles.css строка 227 */
+    --btn-disabled-shadow: none;                                /* Из styles.css строка 228 */
+
+    /* Transition для кнопок */
+    --btn-transition: box-shadow var(--transition), border-color var(--transition), background-color var(--transition), color var(--transition);  /* Из styles.css строки 159-162 */
+
+    /* ============================================
+       СТИЛИ ПОЛЕЙ ВВОДА (INPUT STYLES)
+       ============================================ */
+
+    /* Base Input */
+    --input-bg: var(--color-white);                             /* Из styles.css строка 272, 398, 407 */
+    --input-color: var(--color-slate-950);                      /* Из styles.css строка 271 */
+    --input-border-default: transparent;                        /* Подразумевается из styles.css */
+    --input-border-focus: rgba(37, 99, 235, 0.72);              /* Из styles.css строка 291 */
+    --input-shadow-focus: 0 0 0 4px rgba(37, 99, 235, 0.12);    /* Из styles.css строка 292-293 */
+    --input-placeholder-color: var(--color-slate-400);          /* Из styles.css строка 283 */
+
+    /* Error State */
+    --input-border-error: rgba(220, 38, 38, 0.7);               /* Из styles.css строка 328, 430 */
+    --input-shadow-error: 0 0 0 4px rgba(220, 38, 38, 0.1);     /* Из styles.css строка 329, 431 */
+
+    /* Select Arrow */
+    --select-arrow-color: var(--color-slate-500);               /* Из styles.css строка 360-361 */
+    --select-arrow-size: 6px;                                   /* Из styles.css строка 365 */
+
+    /* ============================================
+       АНИМАЦИИ И ПЕРЕХОДЫ (TRANSITIONS)
+       ============================================ */
+
+    --transition: 0.2s ease;              /* Из styles.css строка 29, style.css строка 29, styleactual.css строка 29, styles2.css строка 29 */
+
+    /* ============================================
+       МАКЕТ (LAYOUT)
+       ============================================ */
+
+    --container-width: 1200px;            /* Из styles.css строка 30, style.css строка 30, styleactual.css строка 30, styles2.css строка 30 */
+    --container: var(--container-width);  /* Алиас для совместимости с citizen.css, staticreboot.css, styleactual.css */
+    
+    /* ============================================
+       СПЕЦИАЛЬНЫЕ ЭФФЕКТЫ (SPECIAL EFFECTS)
+       ============================================ */
+
+    /* Фоновые градиенты для body */
+    --body-bg-gradient-1: radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 32%);  /* Из styles.css строка 48 */
+    --body-bg-gradient-2: radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 30%); /* Из styles.css строка 49 */
+    --body-bg-base: var(--color-slate-50);  /* Из styles.css строка 50 */
+
+    /* Карточки */
+    --card-bg: rgba(255, 255, 255, 0.82);  /* Из styles.css строка 112 */
+    --card-border: 1px solid rgba(255, 255, 255, 0.24);  /* Из styles.css строка 110 */
+    --card-accent-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(219, 234, 254, 0.88));  /* Из styles.css строка 117-119 */
+
+    /* Eyebrow text (надзаголовки) */
+    --eyebrow-color: var(--color-primary-strong);  /* Из styles.css строка 129 */
+    --eyebrow-font-size: 0.8rem;                   /* Из styles.css строка 130 */
+    --eyebrow-font-weight: 700;                    /* Из styles.css строка 131 */
+    --eyebrow-letter-spacing: 0.08em;              /* Из styles.css строка 132 */
+}

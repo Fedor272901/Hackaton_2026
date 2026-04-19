@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # app/api/v1/endpoints/requests.py
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
@@ -5,6 +6,12 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 
 from app.core.config import SECRET_KEY, ALGORITHM
+=======
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional, List
+
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 from app.db.database import get_db
 from app.db.models import User, Request, Deputy
 from app.core.roles import Role
@@ -20,7 +27,12 @@ from app.schemas.requests import (
     StatusHistoryResponse,
     StatisticsResponse
 )
+<<<<<<< HEAD
 from app.crud import request as request_crud
+=======
+# Refactored: direct CRUD call replaced by Service Layer for transactional safety
+from app.services import RequestService
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 from app.core.dependencies import get_current_active_user
 # ИСПОЛЬЗУЕМ ГОТОВЫЕ ПРОВЕРКИ ИЗ permissions.py
 from app.core.permissions import require_admin, require_admin_or_deputy
@@ -30,21 +42,56 @@ from app.core.access import can_view_request
 from app.core.rate_limit import rate_limiter
 from app.core.spam_filter import spam_filter
 
+<<<<<<< HEAD
+=======
+# Настройки пагинации из config
+from app.core.config import settings
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 
 
 router = APIRouter()
 
 
+<<<<<<< HEAD
 def get_request_or_404(db: Session, request_id: int) -> Request:
       request = request_crud.get_request_by_id(db, request_id)
       if not request:
           raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
       return request
+=======
+# ========================
+# Dependency Injection for Services
+# ========================
+
+async def get_request_service(session: AsyncSession = Depends(get_db)) -> RequestService:
+    """
+    Get RequestService instance with database session.
+    
+    This dependency is used to inject the service into endpoint handlers.
+    The service manages its own transactions for write operations.
+    
+    Args:
+        session: Database session from get_db dependency
+    
+    Returns:
+        RequestService instance initialized with the session
+    """
+    return RequestService(session)
+
+
+async def get_request_or_404(service: RequestService, request_id: int) -> Request:
+    """Helper to get request or raise 404."""
+    request = await service.get_request_by_id(request_id)
+    if not request:
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
+    return request
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 
 # ---------------------------
 # Справочные эндпоинты (всем авторизованным)
 # ---------------------------
 @router.get("/statuses", response_model=List[RequestStatusResponse])
+<<<<<<< HEAD
 def get_statuses(db: Session = Depends(get_db)):
     """Получить список всех возможных статусов обращений"""
     return request_crud.get_request_statuses(db)
@@ -54,15 +101,34 @@ def get_statuses(db: Session = Depends(get_db)):
 def get_categories(db: Session = Depends(get_db)):
     """Получить список всех категорий обращений"""
     return request_crud.get_request_categories(db)
+=======
+async def get_statuses(service: RequestService = Depends(get_request_service)):
+    """Получить список всех возможных статусов обращений"""
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    return await service.get_request_statuses()
+
+
+@router.get("/categories", response_model=List[RequestCategoryResponse])
+async def get_categories(service: RequestService = Depends(get_request_service)):
+    """Получить список всех категорий обращений"""
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    return await service.get_request_categories()
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 
 
 # ---------------------------
 # Основные эндпоинты обращений
 # ---------------------------
 @router.post("/", response_model=RequestResponse, status_code=201)
+<<<<<<< HEAD
 def create_request(
     request_data: RequestCreate,
     db: Session = Depends(get_db),
+=======
+async def create_request(
+    request_data: RequestCreate,
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -87,28 +153,49 @@ def create_request(
         )
 
     # ЗАЩИТА 3: Проверка дубликатов
+<<<<<<< HEAD
     if request_crud.check_duplicate_request(db, current_user.id, request_data.title):
+=======
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    if await service.check_duplicate_request(current_user.id, request_data.title):
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         raise HTTPException(
             status_code=400,
             detail="Похожее обращение уже было отправлено недавно"
         )
 
     try:
+<<<<<<< HEAD
         return request_crud.create_request(db, request_data, current_user.id)
+=======
+        # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+        return await service.create_request(request_data, current_user.id)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     except Exception as e:
         raise HTTPException(400, f"Ошибка при создании обращения: {str(e)}")
 
 
 @router.get("/", response_model=RequestListResponse)
+<<<<<<< HEAD
 def get_requests_list(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+=======
+async def get_requests_list(
+    skip: int = Query(0, ge=0),
+    # Magic number extracted to config for environment flexibility
+    limit: int = Query(settings.DEFAULT_LIMIT, ge=1, le=settings.MAX_LIMIT),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     district_id: Optional[int] = None,
     category_id: Optional[int] = None,
     status_id: Optional[int] = None,
     my_requests: bool = False,
     include_closed: bool = True,
+<<<<<<< HEAD
     db: Session = Depends(get_db),
+=======
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -120,8 +207,11 @@ def get_requests_list(
     - Админ: все
     """
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     # ФИЛЬТРАЦИЯ ПО РОЛИ
     if current_user.role == Role.CITIZEN:
         my_requests = True  # гражданин видит только свои
@@ -129,12 +219,24 @@ def get_requests_list(
     user_id = current_user.id if my_requests else None
 
     if current_user.role == Role.DEPUTY and not my_requests:
+<<<<<<< HEAD
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
         if deputy:
             district_id = deputy.district_id  # депутат видит только свой район
 
     return request_crud.get_requests(
         db=db,
+=======
+        # Используем DeputyService для получения данных депутата
+        from app.services import DeputyService
+        deputy_service = DeputyService(service.session)
+        deputy = await deputy_service.get_deputy_by_user_id(current_user.id)
+        if deputy:
+            district_id = deputy.district_id  # депутат видит только свой район
+
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    return await service.get_requests(
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         skip=skip,
         limit=limit,
         user_id=user_id,
@@ -146,6 +248,7 @@ def get_requests_list(
 
 
 @router.get("/my", response_model=List[RequestResponse])
+<<<<<<< HEAD
 def get_my_requests(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
@@ -156,6 +259,18 @@ def get_my_requests(
     """Получить список обращений текущего пользователя"""
     result = request_crud.get_requests(
         db=db,
+=======
+async def get_my_requests(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    include_closed: bool = Query(True),
+    service: RequestService = Depends(get_request_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Получить список обращений текущего пользователя"""
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    result = await service.get_requests(
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         skip=skip,
         limit=limit,
         user_id=current_user.id,
@@ -165,9 +280,15 @@ def get_my_requests(
 
 
 @router.get("/{request_id}", response_model=RequestResponse)
+<<<<<<< HEAD
 def get_request_details(
     request_id: int = Path(..., ge=1),
     db: Session = Depends(get_db),
+=======
+async def get_request_details(
+    request_id: int = Path(..., ge=1),
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -179,21 +300,35 @@ def get_request_details(
     - Админ: все
     """
 
+<<<<<<< HEAD
 
     request = get_request_or_404(db, request_id)
 
     # ИСПОЛЬЗУЕМ ГОТОВУЮ ПРОВЕРКУ ИЗ permissions.py
     if not can_view_request(current_user, request.user_id, request.district_id, db):
+=======
+    request = await get_request_or_404(service, request_id)
+
+    # ИСПОЛЬЗУЕМ ГОТОВУЮ ПРОВЕРКУ ИЗ permissions.py
+    if not can_view_request(current_user, request.user_id, request.district_id, service.session):
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         raise HTTPException(403, "У вас нет прав для просмотра этого обращения")
 
     return request
 
 
 @router.patch("/{request_id}", response_model=RequestResponse)
+<<<<<<< HEAD
 def update_request(
     request_id: int,
     request_update: RequestUpdate,
     db: Session = Depends(get_db),
+=======
+async def update_request(
+    request_id: int,
+    request_update: RequestUpdate,
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(get_current_active_user)
 ):
     """
@@ -205,7 +340,11 @@ def update_request(
     - Админ: все
     """
 
+<<<<<<< HEAD
     request = get_request_or_404(db, request_id)
+=======
+    request = await get_request_or_404(service, request_id)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 
     # ПРОВЕРКА ПРАВ
     if current_user.role == Role.CITIZEN:
@@ -217,25 +356,45 @@ def update_request(
             raise HTTPException(403, "Вы не можете менять статус обращения")
 
     elif current_user.role == Role.DEPUTY:
+<<<<<<< HEAD
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
+=======
+        # Используем DeputyService для получения данных депутата
+        from app.services import DeputyService
+        deputy_service = DeputyService(service.session)
+        deputy = await deputy_service.get_deputy_by_user_id(current_user.id)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         if not deputy or request.district_id != deputy.district_id:
             raise HTTPException(403, "Вы можете редактировать только обращения своего района")
 
     # Админ - без ограничений
 
     try:
+<<<<<<< HEAD
         return request_crud.update_request(
             db, request_id, request_update, current_user.id
+=======
+        # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+        return await service.update_request(
+            request_id, request_update, current_user.id
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         )
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 
 @router.post("/{request_id}/assign/{deputy_id}", response_model=RequestResponse)
+<<<<<<< HEAD
 def assign_deputy_to_request(
     request_id: int,
     deputy_id: int,
     db: Session = Depends(get_db),
+=======
+async def assign_deputy_to_request(
+    request_id: int,
+    deputy_id: int,
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(require_admin)  # ТОЛЬКО АДМИН
 ):
     """
@@ -244,18 +403,32 @@ def assign_deputy_to_request(
     Доступно только для администраторов.
     """
 
+<<<<<<< HEAD
     request = get_request_or_404(db, request_id)
 
     try:
         return request_crud.assign_deputy(db, request_id, deputy_id, current_user.id)
+=======
+    request = await get_request_or_404(service, request_id)
+
+    try:
+        # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+        return await service.assign_deputy(request_id, deputy_id, current_user.id)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 
 @router.delete("/{request_id}", status_code=204)
+<<<<<<< HEAD
 def delete_request(
     request_id: int,
     db: Session = Depends(get_db),
+=======
+async def delete_request(
+    request_id: int,
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(require_admin)  # ТОЛЬКО АДМИН
 ):
     """
@@ -263,7 +436,12 @@ def delete_request(
 
     Доступно только для администраторов.
     """
+<<<<<<< HEAD
     if not request_crud.delete_request(db, request_id):
+=======
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    if not await service.delete_request(request_id):
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
 
 
@@ -271,15 +449,24 @@ def delete_request(
 # Сообщения к обращениям
 # ---------------------------
 @router.get("/{request_id}/messages", response_model=List[MessageResponse])
+<<<<<<< HEAD
 def get_request_messages(
     request_id: int,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
+=======
+async def get_request_messages(
+    request_id: int,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(get_current_active_user)
 ):
     """Получить сообщения по обращению"""
 
+<<<<<<< HEAD
     request = get_request_or_404(db, request_id)
 
     # ГОТОВАЯ ПРОВЕРКА
@@ -287,18 +474,36 @@ def get_request_messages(
         raise HTTPException(403, "У вас нет прав для просмотра сообщений")
 
     result = request_crud.get_request_messages(db, request_id, skip, limit)
+=======
+    request = await get_request_or_404(service, request_id)
+
+    # ГОТОВАЯ ПРОВЕРКА
+    if not can_view_request(current_user, request.user_id, request.district_id, service.session):
+        raise HTTPException(403, "У вас нет прав для просмотра сообщений")
+
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    result = await service.get_request_messages(request_id, skip, limit)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     return result["items"]
 
 
 @router.post("/{request_id}/messages", response_model=MessageResponse, status_code=201)
+<<<<<<< HEAD
 def add_message_to_request(
     request_id: int,
     message_data: MessageCreate,
     db: Session = Depends(get_db),
+=======
+async def add_message_to_request(
+    request_id: int,
+    message_data: MessageCreate,
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(get_current_active_user)
 ):
     """Добавить сообщение к обращению"""
 
+<<<<<<< HEAD
     request = get_request_or_404(db, request_id)
 
     # ГОТОВАЯ ПРОВЕРКА
@@ -307,6 +512,17 @@ def add_message_to_request(
 
     return request_crud.add_message_to_request(
         db, request_id, current_user.id, message_data.text
+=======
+    request = await get_request_or_404(service, request_id)
+
+    # ГОТОВАЯ ПРОВЕРКА
+    if not can_view_request(current_user, request.user_id, request.district_id, service.session):
+        raise HTTPException(403, "Вы не можете комментировать это обращение")
+
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    return await service.add_message_to_request(
+        request_id, current_user.id, message_data.text
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     )
 
 
@@ -314,13 +530,20 @@ def add_message_to_request(
 # История статусов
 # ---------------------------
 @router.get("/{request_id}/status-history", response_model=List[StatusHistoryResponse])
+<<<<<<< HEAD
 def get_request_status_history(
     request_id: int,
     db: Session = Depends(get_db),
+=======
+async def get_request_status_history(
+    request_id: int,
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(get_current_active_user)
 ):
     """Получить историю изменения статусов обращения"""
     
+<<<<<<< HEAD
     request = get_request_or_404(db, request_id)
 
     # ГОТОВАЯ ПРОВЕРКА
@@ -328,15 +551,31 @@ def get_request_status_history(
         raise HTTPException(403, "У вас нет прав для просмотра истории")
 
     return request_crud.get_request_status_history(db, request_id)
+=======
+    request = await get_request_or_404(service, request_id)
+
+    # ГОТОВАЯ ПРОВЕРКА
+    if not can_view_request(current_user, request.user_id, request.district_id, service.session):
+        raise HTTPException(403, "У вас нет прав для просмотра истории")
+
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    return await service.get_request_status_history(request_id)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 
 
 # ---------------------------
 # Статистика
 # ---------------------------
 @router.get("/statistics/summary", response_model=StatisticsResponse)
+<<<<<<< HEAD
 def get_requests_statistics(
     district_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+=======
+async def get_requests_statistics(
+    district_id: Optional[int] = Query(None),
+    service: RequestService = Depends(get_request_service),
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
     current_user: User = Depends(require_admin_or_deputy)  # АДМИН ИЛИ ДЕПУТАТ
 ):
     """
@@ -346,9 +585,21 @@ def get_requests_statistics(
     Депутаты видят статистику только по своему району.
     """
     if current_user.role == Role.DEPUTY:
+<<<<<<< HEAD
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
+=======
+        # Используем DeputyService для получения данных депутата
+        from app.services import DeputyService
+        deputy_service = DeputyService(service.session)
+        deputy = await deputy_service.get_deputy_by_user_id(current_user.id)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
         if not deputy:
             raise HTTPException(403, "Депутат не привязан ни к одному району")
         district_id = deputy.district_id
 
+<<<<<<< HEAD
     return request_crud.get_statistics(db, district_id)
+=======
+    # Refactored: direct CRUD call replaced by Service Layer for transactional safety
+    return await service.get_statistics(district_id)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)

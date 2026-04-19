@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Подать обращение — Портал обращений{% endblock %}
+
+{% block extra_meta %}
+<meta name="description" content="Форма подачи обращения к местному депутату: выберите категорию, опишите проблему, приложите фото">
+{% endblock %}
+
+{% block body_class %}dashboard-page citizen-create-appeal{% endblock %}
+
+{% block navbar %}
+<header class="dashboard-header">
+  <div class="dashboard-header__brand">
+    <div class="dashboard-header__logo" aria-hidden="true">МД</div>
+    <div>
+      <p class="dashboard-header__eyebrow">Портал обращений</p>
+      <p class="dashboard-header__title">Кабинет гражданина</p>
+    </div>
+  </div>
+
+  <nav class="dashboard-nav" aria-label="Навигация по кабинету">
+    <a class="dashboard-nav__link" href="{{ url_for('citizen_dashboard') }}">История обращений</a>
+    <a class="dashboard-nav__link dashboard-nav__link--active" href="{{ url_for('citizen_create_appeal') }}">Подать обращение</a>
+  </nav>
+
+  <div class="dashboard-header__profile">
+    <div class="dashboard-header__user">
+      <div class="dashboard-header__avatar" aria-hidden="true">
+        {{ current_user.first_name|first|upper }}{{ current_user.last_name|first|upper }}
+      </div>
+      <div>
+        <p class="dashboard-header__name">{{ current_user.first_name }} {{ current_user.last_name }}</p>
+        <p class="dashboard-header__role">Гражданин</p>
+      </div>
+    </div>
+    <a class="button button--secondary button--compact" href="{{ url_for('logout') }}">Выйти</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block main_class %}dashboard-main{% endblock %}
+
+{% block content %}
+<section class="create-appeal-layout" aria-labelledby="create-title">
+  <div class="create-appeal__header">
+    <p class="section-card__eyebrow">Новая заявка</p>
+    <h1 class="dashboard-hero__title" id="create-title">Подать обращение</h1>
+    <p class="dashboard-hero__text">Все поля обязательны, кроме фотографий</p>
+
+    <div class="create-appeal__tips">
+      <p class="dashboard-hero__tip">Короткий и конкретный заголовок</p>
+      <p class="dashboard-hero__tip">Адрес определяет округ автоматически</p>
+    </div>
+  </div>
+
+  <div class="create-appeal__content">
+    <form class="appeal-form" action="{{ url_for('citizen_submit_appeal') }}" method="post" enctype="multipart/form-data">
+      <fieldset class="form-section">
+        <legend class="form-section__title">Основная информация</legend>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-category">Категория</label>
+          <select class="form__control" id="appeal-category" name="category" required>
+            <option value="">Выберите категорию</option>
+            {% for category in categories %}
+            <option value="{{ category.code }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+          <p class="form__error">Выберите категорию обращения</p>
+        </div>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-title">Заголовок</label>
+          <input
+            class="form__control"
+            id="appeal-title"
+            name="title"
+            type="text"
+            placeholder="Например: Валяются деревья на детской площадке"
+            maxlength="100"
+            minlength="10"
+            required>
+          <p class="form__hint">До 100 символов</p>
+          <p class="form__error">Введите заголовок длиной от 10 до 100 символов</p>
+        </div>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-description">Описание проблемы</label>
+          <textarea
+            class="form__control form__control--textarea"
+            id="appeal-description"
+            name="description"
+            placeholder="Опишите, что произошло, как давно проблема существует и чем она мешает жителям"
+            minlength="50"
+            maxlength="1000"
+            required></textarea>
+          <p class="form__hint">От 50 до 1000 символов</p>
+          <p class="form__error">Описание должно содержать от 50 до 1000 символов</p>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend class="form-section__title">Фото и адрес</legend>
+
+        <div class="form__field">
+          <span class="form__label">Загрузка фото</span>
+          <label class="upload-dropzone" for="appeal-photos">
+            <input class="upload-dropzone__input" id="appeal-photos" name="photos" type="file" accept="image/jpeg,image/png" multiple>
+            <span class="upload-dropzone__icon" aria-hidden="true"></span>
+            <span class="upload-dropzone__title">Перетащите изображения сюда или выберите файлы</span>
+            <span class="upload-dropzone__text">До 3 файлов, форматы JPG/PNG, макс. 5 МБ</span>
+          </label>
+        </div>
+
+        <div class="photo-preview" aria-label="Превью загруженных изображений">
+          <figure class="photo-preview__item">
+            <div class="photo-preview__placeholder" role="img" aria-label="Превью фото 1"></div>
+            <figcaption>Фото 1</figcaption>
+          </figure>
+          <figure class="photo-preview__item">
+            <div class="photo-preview__placeholder" role="img" aria-label="Превью фото 2"></div>
+            <figcaption>Фото 2</figcaption>
+          </figure>
+          <figure class="photo-preview__item">
+            <div class="photo-preview__placeholder" role="img" aria-label="Превью фото 3"></div>
+            <figcaption>Фото 3</figcaption>
+          </figure>
+        </div>
+
+        <div class="form__field">
+          <label class="form__label" for="appeal-address">Адрес проблемы</label>
+          <input
+            class="form__control"
+            id="appeal-address"
+            name="address"
+            type="text"
+            placeholder="Например: г. Калуга, ул. Московская, д. 291/2"
+            autocomplete="street-address"
+            required>
+          <p class="form__hint">Поле поддерживает автодополнение</p>
+          <p class="form__error">Укажите адрес проблемы</p>
+        </div>
+
+        <input class="state-toggle state-toggle--inline" type="radio" name="address-mode" id="address-mode-manual" checked>
+        <input class="state-toggle state-toggle--inline" type="radio" name="address-mode" id="address-mode-map">
+
+        <div class="address-switcher" aria-label="Способ указания адреса">
+          <label class="address-switcher__label" for="address-mode-manual">Ручной ввод</label>
+          <label class="address-switcher__label" for="address-mode-map">На карте</label>
+        </div>
+
+        <div class="address-panels">
+          <div class="address-panel address-panel--manual">
+            <div class="address-panel__surface">
+              <p class="address-panel__title">Подсказки для ручного ввода</p>
+              <p class="address-panel__text">Автодополнение адресов после начала ввода</p>
+              <div class="autocomplete-placeholder">
+                <span class="autocomplete-placeholder__item">ТЕСТ 1</span>
+                <span class="autocomplete-placeholder__item">ТЕСТ 2</span>
+                <span class="autocomplete-placeholder__item">ТЕСТ 3</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="address-panel address-panel--map">
+            <div class="address-panel__surface address-panel__surface--map">
+              <div class="map-placeholder map-placeholder--large" role="img" aria-label="Карта для выбора точки"></div>
+              <p class="address-panel__title">Кликните, чтобы указать точку</p>
+              <p class="address-panel__text">Выбранная точка заполнит поле адреса</p>
+            </div>
+          </div>
+        </div>
+
+        <article class="district-card">
+          <p class="district-card__eyebrow">Округ определён автоматически</p>
+          <h2 class="district-card__title">{{ district_name|default_if_empty('Округ не определён') }}</h2>
+          <p class="district-card__text">Депутат: {{ deputy_name|default_if_empty('Не назначен') }}</p>
+        </article>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend class="form-section__title">Подтверждение</legend>
+
+        <div class="form__field form__field--checkbox">
+          <label class="checkbox">
+            <input class="checkbox__control" type="checkbox" name="truth_confirmed" required>
+            <span class="checkbox__box" aria-hidden="true"></span>
+            <span class="checkbox__label">Я подтверждаю достоверность указанной информации</span>
+          </label>
+          <p class="form__error">Подтвердите достоверность данных</p>
+        </div>
+
+        <div class="form__actions">
+          <button class="button button--primary button--wide" type="submit">Подать обращение</button>
+        </div>
+      </fieldset>
+    </form>
+
+    <aside class="submission-aside">
+      <article class="submission-card submission-card--highlight">
+        <p class="submission-card__eyebrow">Спасибо за использование сервиса</p>
+      </article>
+      <article class="submission-card">
+        <p class="submission-card__eyebrow">Мы стремимся к высокому уровню обслуживания</p>
+      </article>
+    </aside>
+  </div>
+</section>
+
+<section class="modal modal--success" id="appeal-success-modal" aria-labelledby="appeal-success-title" hidden>
+  <div class="modal__dialog modal__dialog--success">
+    <div class="modal__header">
+      <div>
+        <p class="section-card__eyebrow">Отправка обращения</p>
+        <h2 class="modal__title" id="appeal-success-title">Обращение отправлено</h2>
+      </div>
+      <a class="modal__close" href="{{ url_for('citizen_dashboard') }}" aria-label="Закрыть">Закрыть</a>
+    </div>
+    <div class="modal__content">
+      <section class="response-card response-card--success">
+        <p class="response-card__text">Заявка зарегистрирована и будет передана депутату после проверки</p>
+      </section>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  'use strict';
+
+  var form = document.querySelector('.appeal-form');
+  var photosInput = document.getElementById('appeal-photos');
+  var photoPreviews = document.querySelectorAll('.photo-preview__placeholder');
+
+  function handlePhotoSelect(event) {
+    var files = event.target.files;
+    var maxFiles = 3;
+    var validTypes = ['image/jpeg', 'image/png'];
+    var maxSize = 5 * 1024 * 1024;
+
+    if (files.length > maxFiles) {
+      alert('Можно загрузить не более 3 файлов');
+      event.target.value = '';
+      clearPreviews();
+      return;
+    }
+
+    clearPreviews();
+
+    for (var i = 0; i < files.length && i < maxFiles; i++) {
+      var file = files[i];
+
+      if (validTypes.indexOf(file.type) === -1) {
+        alert('Разрешены только файлы JPG и PNG');
+        event.target.value = '';
+        clearPreviews();
+        return;
+      }
+
+      if (file.size > maxSize) {
+        alert('Размер файла не должен превышать 5 МБ');
+        event.target.value = '';
+        clearPreviews();
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var index = Array.from(event.target.files).indexOf(file);
+        if (index < photoPreviews.length) {
+          photoPreviews[index].style.backgroundImage = 'url(' + e.target.result + ')';
+          photoPreviews[index].setAttribute('role', 'img');
+          photoPreviews[index].setAttribute('aria-label', 'Превью фото ' + (index + 1));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function clearPreviews() {
+    for (var i = 0; i < photoPreviews.length; i++) {
+      photoPreviews[i].style.backgroundImage = '';
+      photoPreviews[i].removeAttribute('role');
+      photoPreviews[i].removeAttribute('aria-label');
+    }
+  }
+
+  function handleSubmit(event) {
+    var category = document.getElementById('appeal-category').value;
+    var title = document.getElementById('appeal-title').value;
+    var description = document.getElementById('appeal-description').value;
+    var address = document.getElementById('appeal-address').value;
+    var confirmed = document.querySelector('input[name="truth_confirmed"]').checked;
+
+    var isValid = true;
+
+    if (!category) {
+      showFieldError('appeal-category', 'Выберите категорию обращения');
+      isValid = false;
+    } else {
+      hideFieldError('appeal-category');
+    }
+
+    if (!title || title.length < 10 || title.length > 100) {
+      showFieldError('appeal-title', 'Введите заголовок длиной от 10 до 100 символов');
+      isValid = false;
+    } else {
+      hideFieldError('appeal-title');
+    }
+
+    if (!description || description.length < 50 || description.length > 1000) {
+      showFieldError('appeal-description', 'Описание должно содержать от 50 до 1000 символов');
+      isValid = false;
+    } else {
+      hideFieldError('appeal-description');
+    }
+
+    if (!address) {
+      showFieldError('appeal-address', 'Укажите адрес проблемы');
+      isValid = false;
+    } else {
+      hideFieldError('appeal-address');
+    }
+
+    if (!confirmed) {
+      showFieldError('truth_confirmed', 'Подтвердите достоверность данных');
+      isValid = false;
+    } else {
+      hideFieldError('truth_confirmed');
+    }
+
+    if (!isValid) {
+      event.preventDefault();
+    }
+  }
+
+  function showFieldError(fieldId, message) {
+    var field = document.getElementById(fieldId);
+    if (!field) return;
+
+    var errorElement = field.parentElement.querySelector('.form__error');
+    if (errorElement) {
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+
+    field.classList.add('form__control--error');
+  }
+
+  function hideFieldError(fieldId) {
+    var field = document.getElementById(fieldId);
+    if (!field) return;
+
+    var errorElement = field.parentElement.querySelector('.form__error');
+    if (errorElement) {
+      errorElement.style.display = 'none';
+    }
+
+    field.classList.remove('form__control--error');
+  }
+
+  function initAddressModeToggle() {
+    var manualRadio = document.getElementById('address-mode-manual');
+    var mapRadio = document.getElementById('address-mode-map');
+    var manualPanel = document.querySelector('.address-panel--manual');
+    var mapPanel = document.querySelector('.address-panel--map');
+
+    function updatePanels() {
+      if (manualRadio.checked) {
+        manualPanel.style.display = 'block';
+        mapPanel.style.display = 'none';
+      } else {
+        manualPanel.style.display = 'none';
+        mapPanel.style.display = 'block';
+      }
+    }
+
+    manualRadio.addEventListener('change', updatePanels);
+    mapRadio.addEventListener('change', updatePanels);
+    updatePanels();
+  }
+
+  if (photosInput) {
+    photosInput.addEventListener('change', handlePhotoSelect);
+  }
+
+  if (form) {
+    form.addEventListener('submit', handleSubmit);
+  }
+
+  initAddressModeToggle();
+})();
+</script>
+{% endblock %}

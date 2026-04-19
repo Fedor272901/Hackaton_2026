@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Обращение №{{ appeal.id }} — Портал обращений{% endblock %}
+
+{% block extra_meta %}
+<meta name="description" content="Детали обращения №{{ appeal.id }}: статус, ответ депутата, история изменений">
+{% endblock %}
+
+{% block body_class %}dashboard-page citizen-appeal-detail{% endblock %}
+
+{% block navbar %}
+<header class="dashboard-header">
+  <div class="dashboard-header__brand">
+    <div class="dashboard-header__logo" aria-hidden="true">МД</div>
+    <div>
+      <p class="dashboard-header__eyebrow">Портал обращений</p>
+      <p class="dashboard-header__title">Кабинет гражданина</p>
+    </div>
+  </div>
+
+  <nav class="dashboard-nav" aria-label="Навигация по кабинету">
+    <a class="dashboard-nav__link" href="{{ url_for('citizen_dashboard') }}">История обращений</a>
+    <a class="dashboard-nav__link" href="{{ url_for('citizen_create_appeal') }}">Подать обращение</a>
+  </nav>
+
+  <div class="dashboard-header__profile">
+    <div class="dashboard-header__user">
+      <div class="dashboard-header__avatar" aria-hidden="true">
+        {{ current_user.first_name|first|upper }}{{ current_user.last_name|first|upper }}
+      </div>
+      <div>
+        <p class="dashboard-header__name">{{ current_user.first_name }} {{ current_user.last_name }}</p>
+        <p class="dashboard-header__role">Гражданин</p>
+      </div>
+    </div>
+    <a class="button button--secondary button--compact" href="{{ url_for('logout') }}">Выйти</a>
+  </div>
+</header>
+{% endblock %}
+
+{% block main_class %}dashboard-main{% endblock %}
+
+{% block content %}
+<section class="appeal-detail-layout" aria-labelledby="appeal-title">
+  <div class="appeal-detail__sidebar">
+    <a class="back-link" href="{{ url_for('citizen_dashboard') }}">← Назад к списку</a>
+
+    <article class="status-tracker-card">
+      <p class="status-tracker-card__eyebrow">Статус обращения</p>
+      <div class="status-tracker-card__status status-tracker-card__status--{{ appeal.status_code|get_status_color }}">
+        {{ appeal.status_code|get_status_label }}
+      </div>
+
+      <div class="status-timeline" aria-label="История статусов">
+        {% for history_item in status_history %}
+        <div class="status-timeline__item">
+          <div class="status-timeline__dot"></div>
+          <div class="status-timeline__content">
+            <p class="status-timeline__status">{{ history_item.status_code|get_status_label }}</p>
+            <p class="status-timeline__date">{{ history_item.changed_at|format_datetime }}</p>
+            {% if history_item.comment %}
+            <p class="status-timeline__comment">{{ history_item.comment }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="meta-card">
+      <h2 class="meta-card__title">Информация</h2>
+      <dl class="meta-card__list">
+        <div class="meta-card__row">
+          <dt class="meta-card__label">Номер</dt>
+          <dd class="meta-card__value">№{{ appeal.id }}</dd>
+        </div>
+        <div class="meta-card__row">
+          <dt class="meta-card__label">Категория</dt>
+          <dd class="meta-card__value">
+            <span class="appeal-card__badge appeal-card__badge--{{ appeal.category_code|default_if_empty('other') }}">
+              {{ appeal.category_name|default_if_empty('Без категории') }}
+            </span>
+          </dd>
+        </div>
+        <div class="meta-card__row">
+          <dt class="meta-card__label">Дата создания</dt>
+          <dd class="meta-card__value">{{ appeal.created_at|format_datetime }}</dd>
+        </div>
+        <div class="meta-card__row">
+          <dt class="meta-card__label">Округ</dt>
+          <dd class="meta-card__value">{{ appeal.district_name|default_if_empty('Не определён') }}</dd>
+        </div>
+        <div class="meta-card__row">
+          <dt class="meta-card__label">Депутат</dt>
+          <dd class="meta-card__value">{{ appeal.deputy_name|default_if_empty('Не назначен') }}</dd>
+        </div>
+      </dl>
+    </article>
+  </div>
+
+  <div class="appeal-detail__main">
+    <article class="appeal-content-card">
+      <header class="appeal-content-card__header">
+        <h1 class="appeal-content-card__title" id="appeal-title">{{ appeal.title }}</h1>
+        <p class="appeal-content-card__meta">
+          <span>{{ appeal.created_at|format_datetime }}</span>
+          <span>·</span>
+          <span>№{{ appeal.id }}</span>
+        </p>
+      </header>
+
+      <section class="appeal-content-card__section">
+        <h2 class="appeal-content-card__section-title">Описание проблемы</h2>
+        <p class="appeal-content-card__text">{{ appeal.description }}</p>
+      </section>
+
+      <section class="appeal-content-card__section">
+        <h2 class="appeal-content-card__section-title">Адрес</h2>
+        <p class="appeal-content-card__text">{{ appeal.address }}</p>
+        <a class="text-link text-link--strong" href="https://yandex.ru/maps/" target="_blank" rel="noopener noreferrer">Открыть на карте</a>
+      </section>
+
+      {% if appeal.photos and appeal.photos|length > 0 %}
+      <section class="appeal-content-card__section">
+        <h2 class="appeal-content-card__section-title">Прикреплённые фото</h2>
+        <div class="gallery-grid">
+          {% for photo in appeal.photos %}
+          <div class="gallery-grid__item" role="img" aria-label="Фото {{ loop.index }}" style="background-image: url('{{ photo }}')"></div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </article>
+
+    {% if appeal.response_text %}
+    <article class="response-card response-card--full">
+      <p class="response-card__eyebrow">Ответ депутата</p>
+      <p class="response-card__text">{{ appeal.response_text }}</p>
+      <p class="response-card__meta">
+        {% if appeal.response_date %}
+        {{ appeal.response_date|format_datetime }}
+        {% endif %}
+        {% if appeal.deputy_name %}
+        · {{ appeal.deputy_name }}
+        {% endif %}
+      </p>
+    </article>
+    {% else %}
+    <aside class="empty-state empty-state--compact" aria-labelledby="no-response-title">
+      <div class="empty-state__content">
+        <h2 class="empty-state__title" id="no-response-title">Ответ готовится</h2>
+        <p class="empty-state__text">Депутат ещё не ответил на ваше обращение. Мы уведомим вас, когда появится ответ.</p>
+      </div>
+    </aside>
+    {% endif %}
+
+    {% if messages and messages|length > 0 %}
+    <article class="messages-card">
+      <h2 class="messages-card__title">Переписка</h2>
+      <div class="messages-list">
+        {% for message in messages %}
+        <div class="message-item {% if message.sender_type == 'citizen' %}message-item--own{% endif %}">
+          <div class="message-item__avatar">
+            {% if message.sender_type == 'citizen' %}
+            {{ current_user.first_name|first|upper }}
+            {% else %}
+            {{ appeal.deputy_name|first|upper|default_if_empty('Д') }}
+            {% endif %}
+          </div>
+          <div class="message-item__content">
+            <div class="message-item__header">
+              <p class="message-item__author">
+                {% if message.sender_type == 'citizen' %}
+                {{ current_user.first_name }} {{ current_user.last_name }}
+                {% else %}
+                {{ appeal.deputy_name|default_if_empty('Депутат') }}
+                {% endif %}
+              </p>
+              <p class="message-item__time">{{ message.created_at|format_datetime }}</p>
+            </div>
+            <p class="message-item__text">{{ message.text }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -103,11 +103,17 @@ venv.bak/
 
 # VS Code
 .vscode/
+<<<<<<< HEAD
 .vs/
 # IDE
 .idea/
 .vs/
 *.slnx
+=======
+
+# IDE
+.idea/
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
 
 # OS generated files
 .DS_Store
