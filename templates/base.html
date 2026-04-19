@@ -1,37 +1,47 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Портал обращений{% endblock %}</title>
-  <link rel="stylesheet" href="/static/css/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Система обращений{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    {% block extra_head %}{% endblock %}
 </head>
-<body>
-  <nav class="navbar">
-    <div class="navbar__container">
-      <a href="/" class="navbar__brand">🏛️ Портал Обращений</a>
-      <div class="navbar__nav">
-        {% if current_user and current_user.role == 'deputy' %}
-          <a href="/deputy/dashboard" class="navbar__link {% if request.url.path.startswith('/deputy/dashboard') %}active{% endif %}">Обращения</a>
-          <a href="/deputy/statistics" class="navbar__link {% if request.url.path.startswith('/deputy/statistics') %}active{% endif %}">Статистика</a>
-        {% endif %}
-      </div>
-      <div class="navbar__user">
-        {% if current_user %}
-          <div class="navbar__avatar">{{ current_user.first_name[0] }}{{ current_user.last_name[0] }}</div>
-          <span class="text-sm">{{ current_user.first_name }} {{ current_user.last_name }}</span>
-          <a href="/auth/logout" class="btn btn--outline btn--sm">Выйти</a>
-        {% else %}
-          <a href="/auth" class="btn btn--primary btn--sm">Войти</a>
-        {% endif %}
-      </div>
-    </div>
-  </nav>
-  
-  <main class="main">
-    {% block content %}{% endblock %}
-  </main>
-  
-  {% block scripts %}{% endblock %}
+<body class="{% block body_class %}body-bg{% endblock %}">
+
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <a href="{{ url_for('home') }}" class="navbar-brand">Госуслуги.Обращения</a>
+            <div class="navbar-menu">
+                {% if current_user %}
+                    {% if current_user.role == 'citizen' %}
+                        <a href="{{ url_for('citizen_dashboard') }}" class="nav-link">Мои обращения</a>
+                        <a href="{{ url_for('create_appeal') }}" class="nav-link btn-primary">Новое обращение</a>
+                    {% elif current_user.role == 'deputy' %}
+                        <a href="{{ url_for('deputy_dashboard') }}" class="nav-link">Приемная</a>
+                        <a href="{{ url_for('deputy_statistics') }}" class="nav-link">Статистика</a>
+                    {% elif current_user.role == 'admin' %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">Админ-панель</a>
+                    {% endif %}
+                    <span class="nav-link user-info">{{ current_user.full_name }}</span>
+                    <a href="{{ url_for('logout') }}" class="nav-link btn-outline">Выход</a>
+                {% else %}
+                    <a href="{{ url_for('auth') }}" class="nav-link btn-primary">Войти</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="{% block main_class %}container main-content{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Система обработки обращений граждан.</p>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>
