@@ -107,6 +107,9 @@ class District(Base):
     
     geom = Column(Geometry('MULTIPOLYGON', srid=4326), nullable=True)
     
+    deputies = relationship("Deputy", back_populates="district")
+    requests = relationship("Request", back_populates="district")
+
     @staticmethod
     def from_geojson(geojson_data):
         """Создание геометрии из GeoJSON (поддерживает Polygon и MultiPolygon)"""
