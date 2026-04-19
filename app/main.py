@@ -1,117 +1,528 @@
-from fastapi import FastAPI
-from app.api_router import api_router
+# Импортируем FastAPI и Request для обработки HTTP-запросов
+# Also import Depends для внедрения зависимостей (например, сессии БД)
+from fastapi import FastAPI, Request, Depends, APIRouter
 from fastapi.templating import Jinja2Templates
-
-templates = Jinja2Templates(directory="templates")
-
-app = FastAPI(title="Hackathon API", version="1.0.0")
-
-app.include_router(api_router)
-
-# Импортируем FastAPI - современный фреймворк для создания API на Python
-from fastapi import FastAPI, Request
-
-# Импортируем роутер для API endpoints (уже существующая часть проекта)
-from app.api_router import api_router
-
-# Импортируем Jinja2Templates для серверного рендеринга HTML-шаблонов
-# Jinja2 - это мощный шаблонизатор, который позволяет создавать динамические HTML-страницы
-# Мы используем его для отображения веб-интерфейса пользователям
-from fastapi.templating import Jinja2Templates
-
-# Импортируем StaticFiles для раздачи статических файлов (CSS, JS, изображения)
-# Это нужно чтобы браузеры могли загружать стили и скрипты по правильным путям
 from fastapi.staticfiles import StaticFiles
+from app.api_router import api_router
 
-# ============================================================================
-# НАСТРОЙКА ШАБЛОНОВ (Jinja2)
-# ============================================================================
+# Импортируем зависимости для получения сессии базы данных
+from app.db.database import get_db
+from sqlalchemy.orm import Session
+
+# Импортируем CRUD функции для работы с данными
+# Эти функции инкапсулируют всю логику доступа к базе данных
+from app.crud.request import get_requests, get_request_categories, get_request_statuses
+from app.crud.district import get_districts
+from app.crud.deputy import get_deputies
+
+
+# НАСТРОЙКА ШАБЛОНОВ Jinja2
 # Указываем путь к директории с HTML-шаблонами.
 # Все шаблоны будут искаться относительно этой папки.
-# Структура: app/templates/ с подпапками public/, citizen/, deputy/, admin/
+# Структура: templates/ с подпапками public/, citizen/, deputy/, admin/
 templates = Jinja2Templates(directory="templates")
 
-# ============================================================================
+
 # НАСТРОЙКА СТАТИЧЕСКИХ ФАЙЛОВ
-# ============================================================================
 # Подключаем раздачу статических файлов (CSS, JS, картинки).
-# Путь '/static' в URL будет соответствовать папке app/static/
-# Например: /static/css/base.css -> app/static/css/base.css
-# Это позволяет использовать url_for('static', path='/css/base.css') в шаблонах
+# Путь '/static' в URL будет соответствовать папке static/
+# Это позволяет использовать url_for('static', path='/css/styles.css') в шаблонах
 app = FastAPI(title="Hackathon API", version="1.0.0")
 
-# Монтируем статику по пути /static - все файлы из app/static/ будут доступны через этот URL
+# Монтируем статику по пути /static - все файлы из static/ будут доступны через этот URL
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Подключаем API роутер (уже существующие endpoints)
 app.include_router(api_router)
 
-# ============================================================================
+
+# СОЗДАНИЕ РОУТЕРА ДЛЯ HTML СТРАНИЦ
+# Выносим HTML-роуты в отдельный router для лучшей организации кода.
+# Это позволяет логически отделить API endpoints (возвращающие JSON)
+# от серверных страниц (возвращающих HTML).
+pages_router = APIRouter()
+
+
+
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПОДГОТОВКИ ДАННЫХ
+
+def prepare_citizen_context(db: Session):
+    """
+    Подготовить контекст данных для страницы гражданина
+
+    Эта функция извлекает из БД все необходимые данные для отображения
+    личного кабинета гражданина: список обращений пользователя, категории, статусы.
+
+    Поток данных:
+    1. Запрашиваем список всех категорий обращений (для формы создания)
+    2. Запрашиваем список всех статусов (для фильтрации и отображения)
+    3. Загружаем последние обращения (в будущем — с фильтрацией по user_id)
+
+    Возвращает словарь, который будет передан в шаблон как context.
+    """
+    # Получаем справочники для формы создания обращения
+    categories = get_request_categories(db)
+    statuses = get_request_statuses(db)
+
+    # Получаем список обращений (пока все, позже добавим фильтр по текущему пользователю)
+    requests_data = get_requests(db, skip=0, limit=10)
+
+    # Формируем контекст с понятными именами переменных для шаблона
+    # Шаблон ожидает именно эти ключи: categories, statuses, requests, total
+    return {
+        "categories": categories,           # Список объектов RequestCategory
+        "statuses": statuses,               # Список объектов RequestStatus
+        "requests": requests_data["items"], # Список объектов Request (последние 10)
+        "total": requests_data["total"],    # Общее количество обращений (для пагинации)
+        # Статистика для карточек сводки
+        "in_progress_count": sum(1 for r in requests_data["items"] if r.status and r.status.code in ["new", "considering", "in_progress"]),
+        "completed_count": sum(1 for r in requests_data["items"] if r.status and r.status.code == "closed"),
+    }
+
+
+def prepare_deputy_context(db: Session, district_id: int = None):
+    """
+    Подготовить контекст данных для страницы депутата
+
+    Депутату нужны:
+    - Список обращений его округа (или всех, если district_id не указан)
+    - Информация о округе
+    - Статистика по статусам
+
+    Параметры:
+    - db: сессия базы данных
+    - district_id: опциональный фильтр по округу (если депутат закреплен за конкретным округом)
+    """
+    # Получаем обращения, отфильтрованные по округу если указан
+    requests_data = get_requests(db, skip=0, limit=20, district_id=district_id)
+
+    # Получаем информацию об округе если указан ID
+    district = None
+    if district_id:
+        from app.crud.district import get_district
+        district = get_district(db, district_id)
+
+    # Статистика по статусам для диаграмм
+    status_stats = {}
+    for req in requests_data["items"]:
+        if req.status:
+            status_name = req.status.name or "Неизвестно"
+            status_stats[status_name] = status_stats.get(status_name, 0) + 1
+
+    return {
+        "requests": requests_data["items"],
+        "total": requests_data["total"],
+        "district": district,
+        "status_stats": status_stats,  # Словарь {название статуса: количество}
+        "in_progress_count": sum(1 for r in requests_data["items"] if r.status and r.status.code in ["new", "considering", "in_progress"]),
+        "completed_count": sum(1 for r in requests_data["items"] if r.status and r.status.code == "closed"),
+    }
+
+
+def prepare_admin_context(db: Session):
+    """
+    Подготовить контекст данных для панели администратора
+
+    Администратор видит общую статистику по системе:
+    - Все округа
+    - Все депутаты
+    - Общая статистика по обращениям
+    - Данные для модерации
+
+    Возвращает расширенный контекст с данными для всех вкладок админки.
+    """
+    # Получаем все округа для управления
+    districts = get_districts(db, skip=0, limit=100)
+
+    # Получаем всех депутатов
+    deputies = get_deputies(db, skip=0, limit=100)
+
+    # Получаем обращения для модерации
+    requests_data = get_requests(db, skip=0, limit=50)
+
+    # Агрегируем общую статистику
+    total_requests = requests_data["total"]
+
+    # Считаем распределение по статусам
+    status_distribution = {}
+    for req in requests_data["items"]:
+        if req.status:
+            code = req.status.code or "unknown"
+            status_distribution[code] = status_distribution.get(code, 0) + 1
+
+    # Считаем распределение по категориям
+    category_distribution = {}
+    for req in requests_data["items"]:
+        if req.category:
+            cat_name = req.category.name or "Неизвестно"
+            category_distribution[cat_name] = category_distribution.get(cat_name, 0) + 1
+
+    return {
+        "districts": districts,
+        "deputies": deputies,
+        "requests": requests_data["items"],
+        "total_requests": total_requests,
+        "status_distribution": status_distribution,
+        "category_distribution": category_distribution,
+        "districts_count": len(districts),
+        "deputies_count": len(deputies),
+    }
+
+
+
 # HTML РОУТЫ (СЕРВЕРНЫЙ РЕНДЕРИНГ)
-# ============================================================================
 # Эти маршруты возвращают HTML-страницы, а не JSON как API endpoints.
-# Каждый маршрут использует templates.TemplateResponse для рендеринга шаблона.
+# Каждый маршрут:
+# 1. Получает сессию базы данных через Depends(get_db)
+# 2. Вызывает CRUD функции для извлечения данных
+# 3. Формирует context словарь с данными
+# 4. Рендерит шаблон через templates.TemplateResponse
+#
+# request обязателен в context для работы url_for() в шаблонах.
 
-
-@app.get("/")
-async def home_page(request: Request):
+@pages_router.get("/")
+async def home_page(request: Request, db: Session = Depends(get_db)):
     """
-    Главная страница приложения (публичная зона).
+    Главная страница (публичная зона)
 
-    Возвращает HTML-страницу с общей информацией о приложении.
-    Использует шаблон public/index.html, который наследуется от base.html.
-    request обязателен для работы url_for() в шаблонах.
+    Точка входа для неавторизованных пользователей.
+    Показывает общую информацию о сервисе.
     """
+    # Для главной страницы пока не нужны сложные данные из БД
+    # Можно добавить статистику по всем обращениям для привлечения внимания
     return templates.TemplateResponse(
-        request,                    # ← первый аргумент: объект request
-        "public/auth.html",         # ← второй: имя шаблона
-        {}                          # ← третий: контекст (опционально)
-    )
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "public/auth.html",         # ← 2-й аргумент: путь к шаблону
+    {}                          # ← 3-й аргумент: контекст (словарь с данными)
+)
 
 
-@app.get("/citizen")
-async def citizen_page(request: Request):
+@pages_router.get("/citizen")
+@pages_router.get("/citizen/dashboard")
+async def citizen_dashboard(request: Request, db: Session = Depends(get_db)):
     """
-    Страница гражданина (личный кабинет пользователя).
+    Личный кабинет гражданина
 
-    Здесь граждане могут просматривать и создавать заявки.
-    Использует шаблон citizen/index.html.
-    В будущем здесь будет проверка авторизации и роли пользователя.
+    Отображает:
+    - Список обращений пользователя с их статусами
+    - Форму для создания нового обращения
+    - Сводную статистику (сколько всего, в работе, выполнено)
+
+    Поток данных:
+    1. Извлекаем категории и статусы из справочников
+    2. Загружаем обращения (в будущем фильтруем по текущему пользователю)
+    3. Передаем данные в шаблон citizen/dashboard.html
+
+    Обработка edge-кейсов:
+    - Если обращений нет → шаблон покажет empty state
+    - Если категории не загружены → форма создания будет пустой
     """
+    # Подготавливаем данные через вспомогательную функцию
+    context = prepare_citizen_context(db)
+
+    # Добавляем request обязательно для работы Jinja2
+    context["request"] = request
+
+    # Рендерим шаблон с подготовленными данными
+    # Шаблон ожидает переменные: requests, categories, statuses, total, etc.
     return templates.TemplateResponse(
-        request,                    # ← первый аргумент: объект request
-        "citizen/dashboard.html",   # ← второй: имя шаблона
-        {}                          # ← третий: контекст (опционально)
-    )
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "citizen/dashboard.html",   # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
 
 
-@app.get("/deputy")
-async def deputy_page(request: Request):
+@pages_router.get("/citizen/create")
+async def citizen_create_appeal(request: Request, db: Session = Depends(get_db)):
     """
-    Страница депутата (рабочий кабинет).
+    Страница создания обращения (отдельная страница для формы)
 
-    Депутаты могут управлять заявками от избирателей своего округа.
-    Использует шаблон deputy/index.html.
-    В будущем будет интеграция с базой данных для отображения реальных заявок.
+    Предоставляет форму с полями:
+    - Категория (выпадающий список из БД)
+    - Заголовок, описание
+    - Адрес (с автоопределением округа)
+    - Фотографии
+
+    В отличие от dashboard, эта страница фокусируется только на форме.
     """
+    # Получаем справочники для заполнения формы
+    categories = get_request_categories(db)
+    statuses = get_request_statuses(db)
+    districts = get_districts(db, skip=0, limit=100)
+
+    context = {
+        "request": request,
+        "categories": categories,
+        "districts": districts,
+        "page_title": "Подать обращение",
+    }
+
     return templates.TemplateResponse(
-        request,                    # ← первый аргумент: объект request
-        "deputy/dashboard.html",    # ← второй: имя шаблона
-        {}                          # ← третий: контекст (опционально)
-    )
+    request,                        # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "citizen/create_appeal.html",   # ← 2-й аргумент: путь к шаблону
+    context                         # ← 3-й аргумент: контекст (словарь с данными)
+)
 
 
-@app.get("/admin")
-async def admin_page(request: Request):
+@pages_router.get("/citizen/appeal/{appeal_id}")
+async def citizen_appeal_detail(request: Request, appeal_id: int, db: Session = Depends(get_db)):
     """
-    Панель администратора.
+    Детали конкретного обращения
 
-    Администраторы управляют пользователями, настройками системы и мониторингом.
-    Использует шаблон admin/index.html.
-    Требуется строгая проверка прав доступа (будет добавлена позже).
+    Показывает полную информацию:
+    - Описание проблемы
+    - Адрес на карте
+    - Фотографии
+    - Историю статусов
+    - Переписку с депутатом
+
+    Параметры:
+    - appeal_id: ID обращения из URL (например, /citizen/appeal/123)
     """
+    from app.crud.request import get_request_by_id, get_request_messages, get_request_status_history
+
+    # Загружаем обращение со всеми связанными данными
+    appeal = get_request_by_id(db, appeal_id)
+
+    # Edge-case: если обращение не найдено → возвращаем 404
+    if not appeal:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Обращение не найдено")
+
+    # Загружаем сообщения (переписка)
+    messages_data = get_request_messages(db, appeal_id, skip=0, limit=100)
+
+    # Загружаем историю изменений статуса
+    status_history = get_request_status_history(db, appeal_id)
+
+    context = {
+        "request": request,
+        "appeal": appeal,
+        "messages": messages_data["items"],
+        "status_history": status_history,
+    }
+
     return templates.TemplateResponse(
-        request,                    # ← первый аргумент: объект request
-        "admin/dashboard.html",     # ← второй: имя шаблона
-        {}                          # ← третий: контекст (опционально)
-    )
+    request,                        # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "citizen/appeal_detail.html",   # ← 2-й аргумент: путь к шаблону
+    context                         # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/deputy")
+@pages_router.get("/deputy/dashboard")
+async def deputy_dashboard(request: Request, db: Session = Depends(get_db), district_id: int = None):
+    """
+    Рабочий кабинет депутата
+
+    Отображает обращения жителей округа депутата:
+    - Список обращений с фильтрацией по статусу
+    - Возможность взять обращение в работу
+    - Форма ответа жителю
+
+    Параметры:
+    - district_id: опционально, если депутат работает в нескольких округах
+
+    Поток данных:
+    1. Определяем округ депутата (в будущем из сессии пользователя)
+    2. Загружаем обращения этого округа
+    3. Формируем статистику по статусам
+    """
+    context = prepare_deputy_context(db, district_id)
+    context["request"] = request
+
+    return templates.TemplateResponse(
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "deputy/dashboard.html",    # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/deputy/appeal/{appeal_id}")
+async def deputy_appeal_detail(request: Request, appeal_id: int, db: Session = Depends(get_db)):
+    """
+    Детали обращения для депутата
+
+    Аналогично citizen_appeal_detail, но с дополнительными действиями:
+    - Кнопки "Взять в работу", "Изменить статус"
+    - Форма ответа заявителю
+    """
+    from app.crud.request import get_request_by_id, get_request_messages, get_request_status_history
+
+    appeal = get_request_by_id(db, appeal_id)
+
+    if not appeal:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Обращение не найдено")
+
+    messages_data = get_request_messages(db, appeal_id, skip=0, limit=100)
+    status_history = get_request_status_history(db, appeal_id)
+
+    context = {
+        "request": request,
+        "appeal": appeal,
+        "messages": messages_data["items"],
+        "status_history": status_history,
+        # Флаги для отображения кнопок действий
+        "can_take_to_work": appeal.status and appeal.status.code == "new",
+        "can_respond": True,  # Всегда можно ответить
+    }
+
+    return templates.TemplateResponse(
+    request,                        # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "deputy/appeal_detail.html",    # ← 2-й аргумент: путь к шаблону
+    context                         # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/deputy/statistics")
+async def deputy_statistics(request: Request, db: Session = Depends(get_db), district_id: int = None):
+    """
+    Статистика работы депутата
+
+    Показывает:
+    - Количество обращений по статусам
+    - Среднее время решения
+    - Распределение по категориям
+    """
+    context = prepare_deputy_context(db, district_id)
+    context["request"] = request
+    context["page_title"] = "Статистика"
+
+    return templates.TemplateResponse(
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "deputy/statistics.html",   # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/admin")
+@pages_router.get("/admin/dashboard")
+async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
+    """
+    Панель администратора
+
+    Основной экран с общей статистикой системы:
+    - Количество округов, депутатов, обращений
+    - Распределение обращений по статусам
+    - Быстрый доступ к управлению сущностями
+
+    Поток данных:
+    1. Загружаем все округа
+    2. Загружаем всех депутатов
+    3. Загружаем последние обращения
+    4. Агрегируем статистику
+    """
+    context = prepare_admin_context(db)
+    context["request"] = request
+
+    return templates.TemplateResponse(
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "admin/dashboard.html",     # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/admin/districts")
+async def admin_districts(request: Request, db: Session = Depends(get_db)):
+    """
+    Управление округами
+
+    Список всех округов с возможностью:
+    - Создания нового округа
+    - Редактирования существующих
+    - Удаления (если нет депутатов и обращений)
+    """
+    districts = get_districts(db, skip=0, limit=100)
+
+    context = {
+        "request": request,
+        "districts": districts,
+        "page_title": "Управление округами",
+    }
+
+    return templates.TemplateResponse(
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "admin/districts.html",     # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/admin/deputies")
+async def admin_deputies(request: Request, db: Session = Depends(get_db)):
+    """
+    Управление депутатами
+
+    Список всех депутатов с возможностью:
+    - Назначения нового депутата
+    - Перевода между округами
+    - Снятия полномочий
+    """
+    deputies = get_deputies(db, skip=0, limit=100)
+    districts = get_districts(db, skip=0, limit=100)
+
+    context = {
+        "request": request,
+        "deputies": deputies,
+        "districts": districts,
+        "page_title": "Управление депутатами",
+    }
+
+    return templates.TemplateResponse(
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "admin/deputies.html",      # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/admin/moderation")
+async def admin_moderation(request: Request, db: Session = Depends(get_db)):
+    """
+    Модерация обращений
+
+    Список обращений требующих внимания администратора:
+    - Спорные обращения
+    - Жалобы на качество ответов
+    - Обращения с нарушенными сроками
+    """
+    # Пока загружаем все обращения, позже добавим фильтр по флагу "требует модерации"
+    requests_data = get_requests(db, skip=0, limit=50)
+
+    context = {
+        "request": request,
+        "requests": requests_data["items"],
+        "total": requests_data["total"],
+        "page_title": "Модерация обращений",
+    }
+
+    return templates.TemplateResponse(
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "admin/moderation.html",    # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+@pages_router.get("/admin/statistics")
+async def admin_statistics(request: Request, db: Session = Depends(get_db)):
+    """
+    Расширенная статистика системы
+
+    Детальные отчеты:
+    - Динамика обращений по времени
+    - Эффективность работы по округам
+    - Рейтинг депутатов
+    """
+    context = prepare_admin_context(db)
+    context["request"] = request
+    context["page_title"] = "Статистика системы"
+
+    return templates.TemplateResponse(
+    request,                    # ← 1-й аргумент: объект запроса (ОБЯЗАТЕЛЬНО)
+    "admin/statistics.html",    # ← 2-й аргумент: путь к шаблону
+    context                     # ← 3-й аргумент: контекст (словарь с данными)
+)
+
+
+# Подключаем роутер страниц к основному приложению
+# Теперь все HTML-роуты будут доступны через app
+app.include_router(pages_router)
