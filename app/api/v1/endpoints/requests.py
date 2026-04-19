@@ -208,18 +208,8 @@ def update_request(
     request = get_request_or_404(db, request_id)
 
     # ПРОВЕРКА ПРАВ
-    if current_user.role == Role.CITIZEN:
-        if request.user_id != current_user.id:
-            raise HTTPException(403, "Вы можете редактировать только свои обращения")
-        if request.status.code != "new":
-            raise HTTPException(400, "Можно редактировать только новые обращения")
-        if request_update.status_id is not None:
-            raise HTTPException(403, "Вы не можете менять статус обращения")
-
-    elif current_user.role == Role.DEPUTY:
-        deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
-        if not deputy or request.district_id != deputy.district_id:
-            raise HTTPException(403, "Вы можете редактировать только обращения своего района")
+    if not can_view_request(current_user, request, db):
+        raise HTTPException(403, "Нет прав на редактирование")
 
     # Админ - без ограничений
 

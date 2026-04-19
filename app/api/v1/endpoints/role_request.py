@@ -8,16 +8,10 @@ from app.schemas.role_request import (
     RoleRequestRead,
 )
 from app.crud import role_request as crud
+from app.db.database import get_db
+
 
 router = APIRouter()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("/", response_model=RoleRequestRead, status_code=201)
