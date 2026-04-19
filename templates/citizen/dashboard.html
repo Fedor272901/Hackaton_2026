@@ -35,7 +35,7 @@
             <p class="dashboard-header__role">Гражданин</p>
           </div>
         </div>
-        <a class="button button--secondary button--compact" href="auth">Выйти</a> <!--сделать обработчик кнопки-->
+        <a class="button button--secondary button--compact" href="/templates/public/auth.html">Выйти</a>
       </div>
     </header>
 
@@ -54,49 +54,56 @@
         </div>
 
         <section class="summary-grid" aria-label="Краткая сводка по обращениям">
-          <article class="summary-card">
-            <p class="summary-card__value">ЧИСЛО ОБРАЩЕНИЙ</p>
+          <article class="summary-card" data-summary="total">
+            <p class="summary-card__value">{{ total|default_if_empty('0') }}</p>
             <p class="summary-card__label">Всего обращений</p>
           </article>
-          <article class="summary-card">
-            <p class="summary-card__value">ЧИСЛО В РАБОТЕ И НА РАССМОТРЕНИИ</p>
+          <article class="summary-card" data-summary="in-progress">
+            <p class="summary-card__value">{{ in_progress_count|default_if_empty('0') }}</p>
             <p class="summary-card__label">В работе и на рассмотрении</p>
           </article>
 
-          <article class="summary-card">
-            <p class="summary-card__value">ЧИСЛО ВЫПОЛНЕННЫХ</p>
+          <article class="summary-card" data-summary="completed">
+            <p class="summary-card__value">{{ completed_count|default_if_empty('0') }}</p>
             <p class="summary-card__label">Выполнено</p>
           </article>
         </section>
 
-        <section class="appeals-list" aria-label="Список обращений">
-          <article class="appeal-card">
-            <div class="appeal-card__meta">
-              <p class="appeal-card__number">ТЕСТОВЫЙ НОМЕР</p>
-              <p class="appeal-card__date">ТЕСТОВАЯ ДАТА</p>
-            </div>
-            <div class="appeal-card__body">
-              <span class="appeal-card__badge appeal-card__badge--roads">ТЕСТОВАЯ КАТЕГОРИЯ</span>
-              <h2 class="appeal-card__title">ТЕСТОВОЕ ОПИСАНИЕ КРАТКОЕ</h2>
-              <p class="appeal-card__excerpt">ТЕСТОВОЕ ПОДРОБНОЕ ОПИСАНИЕ</p>
-            </div>
-            <div class="appeal-card__status-wrap">
-              <span class="appeal-card__status appeal-card__status--progress">ТЕСТОВЫЙ СТАТУС</span>
-              <a class="text-link text-link--strong" href="#appeal-12345">Подробнее</a>
-            </div>
-          </article>
+        <section class="appeals-list" aria-label="Список обращений" data-ajax-container="appeals-list">
+          {% if requests %}
+            {% for appeal in requests %}
+            <article class="appeal-card" data-appeal-id="{{ appeal.id }}" data-ajax-item>
+              <div class="appeal-card__meta">
+                <p class="appeal-card__number">№{{ appeal.id }}</p>
+                <p class="appeal-card__date" data-timestamp="{{ appeal.created_at }}">{{ appeal.created_at|format_datetime }}</p>
+              </div>
+              <div class="appeal-card__body">
+                <span class="appeal-card__badge appeal-card__badge--{{ appeal.category.code|default_if_empty('other') }}">{{ appeal.category.name|default_if_empty('Без категории') }}</span>
+                <h2 class="appeal-card__title">{{ appeal.title|truncate_text(60) }}</h2>
+                <p class="appeal-card__excerpt">{{ appeal.description|strip_html|truncate_text(150) }}</p>
+              </div>
+              <div class="appeal-card__status-wrap">
+                <span class="appeal-card__status appeal-card__status--{{ appeal.status.code|get_status_color }}" data-status-code="{{ appeal.status.code|default_if_empty('unknown') }}">
+                  {{ appeal.status.code|get_status_label }}
+                </span>
+                <a class="text-link text-link--strong" href="/citizen/appeal/{{ appeal.id }}" data-ajax-link>Подробнее</a>
+              </div>
+            </article>
+            {% endfor %}
+          {% else %}
+            <aside class="empty-state" aria-labelledby="empty-state-title" data-empty-state>
+              <div class="empty-state__illustration" aria-hidden="true">
+                <span class="empty-state__ring"></span>
+                <span class="empty-state__dot"></span>
+              </div>
+              <div class="empty-state__content">
+                <h2 class="empty-state__title" id="empty-state-title">У вас нет обращений</h2>
+                <p class="empty-state__text">Подайте первое обращение, чтобы отслеживать его статус и получать ответы от депутатов.</p>
+                <label class="button button--primary empty-state__action" for="dashboard-view-create" data-action="create-appeal">Подать первое обращение</label>
+              </div>
+            </aside>
+          {% endif %}
         </section>
-
-        <aside class="empty-state" aria-labelledby="empty-state-title">
-          <div class="empty-state__illustration" aria-hidden="true">
-            <span class="empty-state__ring"></span>
-            <span class="empty-state__dot"></span>
-          </div>
-          <div class="empty-state__content">
-            <h2 class="empty-state__title" id="empty-state-title">ТЕСТВОВОЕ У ВАС НЕТ ОБРАЩЕНИЙ ПОДАЙТЕ ПЕРВОЕ</h2>
-            <label class="button button--primary empty-state__action" for="dashboard-view-create">Подать первое обращение</label>
-          </div>
-        </aside>
       </section>
 
       <section class="dashboard-view dashboard-view--create" id="create-panel" aria-labelledby="create-title">
@@ -349,7 +356,7 @@
       // 1. Проверка наличия токена
       if (!token) {
         console.warn('Доступ запрещен: отсутствует токен');
-        window.location.href = 'auth.html'; 
+        window.location.href = 'auth.html';
         return;
       }
 
@@ -365,7 +372,7 @@
 
         if (response.ok) {
           const userData = await response.json();
-          
+
           // 3. Обновляем UI данными из базы
           // Ищем элемент с именем (в твоем шаблоне это .profile-card__name)
           const nameElement = document.querySelector('.profile-card__name');
@@ -374,7 +381,7 @@
           }
 
           // Тут мы позже вызовем функцию загрузки обращений
-          // loadUserAppeals(); 
+          // loadUserAppeals();
 
         } else {
           // Если токен невалиден или просрочен (401), удаляем его и уходим на логин
@@ -395,7 +402,7 @@
     // Запуск при загрузке страницы
     document.addEventListener('DOMContentLoaded', () => {
       initDashboard();
-      
+
       // Привязываем кнопку выхода, если она есть (например, в профиле)
       const logoutBtn = document.querySelector('.profile-card__logout'); // замени на свой класс
       if (logoutBtn) {
