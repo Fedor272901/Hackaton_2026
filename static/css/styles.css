@@ -1638,7 +1638,7 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
 .empty-state__title {
   font-size: 2.5rem; /* Большие буквы */
   font-weight: 800;
-  color: var(--color-slate-950); 
+  color: var(--color-slate-950);
   letter-spacing: 0.05em;
   margin-bottom: 1rem;
   text-transform: uppercase;
@@ -1704,7 +1704,7 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
 
 /* Принудительно скрываем пустой блок по умолчанию */
 #empty-state-block { display: none !important; }
-  
+
 /* Класс для открытия модалки */
 .modal.is-visible {
   opacity: 1;
@@ -1745,4 +1745,18 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
 .photo-slot:hover {
   background-color: #f1f5f9;
   border-color: #94a3b8;
+}
+
+/* Убираем блок с флагом и ссылками Leaflet */
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* Настройка контейнера карты, чтобы он не "схлопывался" */
+#map {
+  width: 100%;
+  height: 350px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  z-index: 1; /* Чтобы карта не перекрывала меню */
 }
