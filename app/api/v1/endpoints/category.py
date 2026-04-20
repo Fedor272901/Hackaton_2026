@@ -1,13 +1,52 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.db.database import SessionLocal
+from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryRead
+from app.crud import category as crud
+=======
+>>>>>>> front/dev
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryRead
 from app.services import CategoryService
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 
 router = APIRouter()
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+# зависимость для БД — такой же стиль, как в users.py у команды
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@router.get("/", response_model=list[CategoryRead])
+def get_categories(db: Session = Depends(get_db)):
+    """Получить список всех категорий. Доступно всем."""
+    return crud.get_categories(db)
+
+
+@router.get("/{category_id}", response_model=CategoryRead)
+def get_category(category_id: int, db: Session = Depends(get_db)):
+    """Получить категорию по id."""
+    category = crud.get_category(db, category_id)
+=======
+>>>>>>> front/dev
 # ========================
 # Dependency Injection for Services
 # ========================
@@ -47,12 +86,35 @@ async def get_category(
 ):
     """Получить категорию по id."""
     category = await service.get_category(category_id)
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if category is None:
         raise HTTPException(status_code=404, detail="Категория не найдена")
     return category
 
 
 @router.post("/", response_model=CategoryRead, status_code=201)
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+def create_category(data: CategoryCreate, db: Session = Depends(get_db)):
+    """Создать новую категорию. В финале — только для админа."""
+    category = crud.create_category(db, data)
+    return category
+
+
+@router.patch("/{category_id}", response_model=CategoryRead)
+def update_category(
+    category_id: int,
+    data: CategoryUpdate,
+    db: Session = Depends(get_db),
+):
+    """Обновить категорию. В финале — только для админа."""
+    category = crud.update_category(db, category_id, data)
+=======
+>>>>>>> front/dev
 async def create_category(
     data: CategoryCreate,
     service: CategoryService = Depends(get_category_service),
@@ -69,12 +131,25 @@ async def update_category(
 ):
     """Обновить категорию. В финале — только для админа."""
     category = await service.update_category(category_id, data)
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if category is None:
         raise HTTPException(status_code=404, detail="Категория не найдена")
     return category
 
 
 @router.delete("/{category_id}", status_code=204)
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+def delete_category(category_id: int, db: Session = Depends(get_db)):
+    """Удалить категорию. В финале — только для админа."""
+    ok = crud.delete_category(db, category_id)
+    if not ok:
+=======
+>>>>>>> front/dev
 async def delete_category(
     category_id: int,
     service: CategoryService = Depends(get_category_service),
@@ -82,4 +157,8 @@ async def delete_category(
     """Удалить категорию. В финале — только для админа."""
     success = await service.delete_category(category_id)
     if not success:
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         raise HTTPException(status_code=404, detail="Категория не найдена")

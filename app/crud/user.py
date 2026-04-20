@@ -1,7 +1,19 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from typing import Optional, List
+=======
+>>>>>>> front/dev
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import or_, select, func
 from sqlalchemy.orm import joinedload
 from typing import Optional, List, Dict, Any
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 
 from app.db.models import User, Request, Message
 from app.schemas.user import UserCreate
@@ -9,6 +21,20 @@ from app.core.security import hash_password
 from app.core.roles import Role
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
+
+
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(User).filter(User.id == user_id).first()
+
+
+def create_user(db: Session, user_data: UserCreate):
+=======
+>>>>>>> front/dev
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
     result = await db.execute(select(User).where(User.email == email))
     return result.scalar_one_or_none()
@@ -20,6 +46,10 @@ async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[User]:
 
 
 async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     user = User(
         first_name=user_data.first_name,
         last_name=user_data.last_name,
@@ -29,20 +59,48 @@ async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
     )
 
     db.add(user)
+<<<<<<< HEAD
     await db.commit()
     await db.refresh(user)
+=======
+<<<<<<< HEAD
+    db.commit()
+    db.refresh(user)
+=======
+    await db.commit()
+    await db.refresh(user)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 
     return user
 
 
+<<<<<<< HEAD
 async def get_users(
     db: AsyncSession,
+=======
+<<<<<<< HEAD
+def get_users(
+    db: Session,
+=======
+async def get_users(
+    db: AsyncSession,
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     skip: int = 0,
     limit: int = 20,
     role: Optional[Role] = None,
     roles: Optional[List[Role]] = None,
     search: Optional[str] = None,
+<<<<<<< HEAD
 ) -> Dict[str, Any]:
+=======
+<<<<<<< HEAD
+):
+=======
+) -> Dict[str, Any]:
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
     Получить список пользователей с фильтрацией и пагинацией
     
@@ -52,6 +110,21 @@ async def get_users(
     - roles: фильтр по нескольким ролям
     - search: поиск по имени, фамилии, email
     """
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    query = db.query(User)
+    
+    if role:
+        query = query.filter(User.role == role)
+    
+    if roles:
+        query = query.filter(User.role.in_(roles))
+    
+    if search:
+        query = query.filter(
+=======
+>>>>>>> front/dev
     query = select(User)
     
     if role:
@@ -62,6 +135,10 @@ async def get_users(
     
     if search:
         query = query.where(
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
             or_(
                 User.first_name.ilike(f"%{search}%"),
                 User.last_name.ilike(f"%{search}%"),
@@ -69,6 +146,15 @@ async def get_users(
             )
         )
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    total = query.count()
+
+    # Текущая сортировка по роли (citizen → deputy → admin → superuser):
+    users = query.order_by(User.role.asc()).offset(skip).limit(limit).all()
+=======
+>>>>>>> front/dev
     # Для count нужно выполнить отдельный запрос
     count_query = select(func.count()).select_from(query.subquery())
     total_result = await db.execute(count_query)
@@ -78,10 +164,38 @@ async def get_users(
     query = query.order_by(User.role.asc()).offset(skip).limit(limit)
     result = await db.execute(query)
     users = result.scalars().all()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 
     """  АЛЬТЕРНАТИВНЫЕ ВАРИАНТЫ СОРТИРОВКИ:
      
      По дате регистрации (новые сверху):
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+     users = query.order_by(User.created_at.desc()).offset(skip).limit(limit).all()
+    
+     По дате регистрации (старые сверху):
+     users = query.order_by(User.created_at.asc()).offset(skip).limit(limit).all()
+    
+     По фамилии (А-Я):
+     users = query.order_by(User.last_name.asc(), User.first_name.asc()).offset(skip).limit(limit).all()
+    
+     По фамилии (Я-А):
+     users = query.order_by(User.last_name.desc()).offset(skip).limit(limit).all()
+    
+     По роли (citizen → deputy → admin → superuser):
+     users = query.order_by(User.role.asc()).offset(skip).limit(limit).all()
+    
+     По роли + дате (сначала по роли, потом новые сверху):
+     users = query.order_by(User.role.asc(), User.created_at.desc()).offset(skip).limit(limit).all()
+    
+     По email (А-Я):
+     users = query.order_by(User.email.asc()).offset(skip).limit(limit).all()
+=======
+>>>>>>> front/dev
      query = query.order_by(User.created_at.desc()).offset(skip).limit(limit)
     
      По дате регистрации (старые сверху):
@@ -101,6 +215,10 @@ async def get_users(
     
      По email (А-Я):
      query = query.order_by(User.email.asc()).offset(skip).limit(limit)
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
 
     return {
@@ -111,11 +229,23 @@ async def get_users(
     }
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+def update_user(db: Session, user_id: int, update_data: dict) -> Optional[User]:
+    """Обновить данные пользователя"""
+    user = db.query(User).filter(User.id == user_id).first()
+=======
+>>>>>>> front/dev
 async def update_user(db: AsyncSession, user_id: int, update_data: dict) -> Optional[User]:
     """Обновить данные пользователя"""
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if not user:
         return None
     
@@ -123,6 +253,26 @@ async def update_user(db: AsyncSession, user_id: int, update_data: dict) -> Opti
         if hasattr(user, field) and value is not None:
             setattr(user, field, value)
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def delete_user(db: Session, user_id: int) -> bool:
+    """
+    Удалить пользователя полностью (вместе со всеми связанными данными)
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return False
+    
+    db.delete(user)
+    db.commit()
+=======
+>>>>>>> front/dev
     await db.commit()
     await db.refresh(user)
     return user
@@ -140,4 +290,8 @@ async def delete_user(db: AsyncSession, user_id: int) -> bool:
     
     await db.delete(user)
     await db.commit()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     return True

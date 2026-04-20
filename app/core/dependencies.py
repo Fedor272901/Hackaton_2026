@@ -1,4 +1,26 @@
 from jose import jwt, JWTError
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+
+from app.core.config import SECRET_KEY, ALGORITHM
+from app.db.database import get_db
+from app.crud.user import get_user_by_id
+from app.db.models import User
+from app.core.roles import Role
+
+security = HTTPBearer()
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+):
+=======
+>>>>>>> front/dev
 from fastapi import Depends, HTTPException, Request, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,12 +48,24 @@ async def get_current_user(
     
     Требует заголовок Authorization: Bearer <token>
     """
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     # 1. Достаём сам токен из заголовка
     token = credentials.credentials
 
     try:
         # 2. Раскодируем JWT (проверяем подпись + срок жизни)
+<<<<<<< HEAD
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+=======
+<<<<<<< HEAD
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+=======
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 
         # 3. Достаём user_id из токена
         user_id = int(payload.get("sub"))
@@ -45,8 +79,17 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     # 4. Идём в базу и получаем пользователя
+<<<<<<< HEAD
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
+=======
+<<<<<<< HEAD
+    user = get_user_by_id(db, user_id)
+=======
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 
     # если пользователя нет в БД — доступ запрещён
     if not user:
@@ -62,6 +105,15 @@ async def get_current_user(
     return user
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+def get_current_active_user(current_user: User = Depends(get_current_user)):
+    """
+    Получить текущего активного пользователя
+
+=======
+>>>>>>> front/dev
 async def get_optional_user(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -111,11 +163,20 @@ def get_current_active_user(current_user: User = Depends(get_current_user)):
     """
     Получить текущего активного пользователя.
     
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     В будущем можно добавить проверку:
     - if not current_user.is_active:
     -     raise HTTPException(status_code=403, detail="User is inactive")
     """
     return current_user
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> front/dev
 
 
 async def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
@@ -164,4 +225,9 @@ async def get_optional_user_from_token(
         return UserRead(id=int(user_id), **payload)  # fallback без БД
         
     except (JWTError, ValueError, KeyError):
+<<<<<<< HEAD
         return None  # Токен невалиден — возвращаем None, а не ошибку
+=======
+        return None  # Токен невалиден — возвращаем None, а не ошибку
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev

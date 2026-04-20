@@ -29,8 +29,18 @@ starlette==1.0.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.44.0
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> front/dev
 beautifulsoup4 == 4.14.3
 Jinja2 == 3.1.6
 httpx==0.28.1
 pydantic-settings == 2.13.1
+<<<<<<< HEAD
 asyncpg>=0.29.0
+=======
+asyncpg>=0.29.0
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev

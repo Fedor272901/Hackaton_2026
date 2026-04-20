@@ -8,7 +8,10 @@
   <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body class="auth-page">
+<<<<<<< HEAD
   <!-- CSS-only переключение между входом и регистрацией -->
+=======
+>>>>>>> front/dev
   <input class="state-toggle" type="radio" name="auth-mode" id="auth-mode-login" checked>
   <input class="state-toggle" type="radio" name="auth-mode" id="auth-mode-register">
 
@@ -91,7 +94,11 @@
         </div>
 
         <div class="auth-forms">
+<<<<<<< HEAD
           <form class="auth-form auth-form--login" action="citizen/dashboard.html" method="get">
+=======
+          <form class="auth-form auth-form--login" action="/templates/citizen/dashboard.html" method="get">
+>>>>>>> front/dev
             <div class="auth-form__body">
               <div class="form__field">
                 <label class="form__label" for="login-identity">Email</label>
@@ -101,15 +108,23 @@
                   name="identity" 
                   type="email" 
                   placeholder="example@mail.ru" 
+<<<<<<< HEAD
                   title="Введите корректный адрес электронной почты"
                   required
                 >
                 <p class="form__error">Укажите корректный Email (например, name@mail.ru)</p>
+=======
+                  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}"
+                  title="Введите корректный адрес электронной почты"
+                  required
+                >
+>>>>>>> front/dev
               </div>
 
               <div class="form__field">
                 <label class="form__label" for="login-password">Пароль</label>
                 <div class="pw-wrapper">
+<<<<<<< HEAD
                   <input 
                     class="form__control" 
                     id="login-password" 
@@ -119,6 +134,17 @@
                     /* Требование: минимум 8 символов и хотя бы одна буква */
                     pattern="(?=.*[a-zA-Z]).{8,}"
                     title="Пароль должен быть от 8 символов и содержать минимум одну латинскую букву"
+=======
+                  <input
+                    class="form__control"
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    placeholder="Введите пароль"
+                    /* ТРЕБОВАНИЕ: Минимум 8 символов и 1 буква */
+                    pattern="(?=.*[a-zA-Z]).{8,}"
+                    title="Пароль должен быть не менее 8 символов и содержать хотя бы одну латинскую букву"
+>>>>>>> front/dev
                     required
                   >
                   <button type="button" class="pw-toggle-btn js-pw-toggle">
@@ -147,12 +173,19 @@
                   id="register-first-name"
                   name="first_name"
                   type="text"
+<<<<<<< HEAD
                   placeholder="ИМЯ"
                   autocomplete="given-name"
                   minlength="2"
                   required
                   pattern="[A-Za-zА-Яа-яЁё\-]{2,}">
                 <p class="form__error">Введите имя без цифр, минимум 2 символа.</p>
+=======
+                  placeholder="Имя"
+                  autocomplete="given-name"
+                  required
+                  pattern="[A-Za-zА-Яа-яЁё\-]{2,}">
+>>>>>>> front/dev
               </div>
 
               <div class="form__field">
@@ -162,12 +195,19 @@
                   id="register-last-name"
                   name="last_name"
                   type="text"
+<<<<<<< HEAD
                   placeholder="ФАМИЛИЯ"
                   autocomplete="family-name"
                   minlength="2"
                   required
                   pattern="[A-Za-zА-Яа-яЁё\-]{2,}">
                 <p class="form__error">Введите фамилию без цифр, минимум 2 символа.</p>
+=======
+                  placeholder="Фамилия"
+                  autocomplete="family-name"
+                  required
+                  pattern="[A-Za-zА-Яа-яЁё\-]{2,}">
+>>>>>>> front/dev
               </div>
             </div>
 
@@ -181,30 +221,69 @@
                 placeholder="citizen@example.ru"
                 autocomplete="email"
                 required>
+<<<<<<< HEAD
               <p class="form__error">Введите email в формате name@example.ru.</p>
+=======
+>>>>>>> front/dev
             </div>
 
             <div class="form__grid form__grid--two">
               <div class="form__field">
                 <label class="form__label" for="register-password">Пароль</label>
                 <div class="pw-wrapper">
+<<<<<<< HEAD
                   <input class="form__control" id="register-password" name="password" type="password" placeholder="Пароль" required>
+=======
+                  <input 
+                    class="form__control" 
+                    id="register-password" 
+                    name="password" 
+                    type="password" 
+                    placeholder="Пароль" 
+                    /* ТРЕБОВАНИЕ: Минимум 8 символов и 1 буква */
+                    pattern="(?=.*[a-zA-Z]).{8,}"
+                    title="Пароль должен быть не менее 8 символов и содержать хотя бы одну латинскую букву"
+                    required
+                  >
+>>>>>>> front/dev
                   <button type="button" class="pw-toggle-btn js-pw-toggle">
                     <span class="pw-toggle-icon"></span>
                   </button>
                 </div>
+<<<<<<< HEAD
                 <p class="form__error">Минимум 8 символов и 1 буква</p>
+=======
+                <p class="form__hint" style="font-size: 12px; margin-top: 4px; color: #666;">Минимум 8 символов и 1 латинская буква</p>
+>>>>>>> front/dev
               </div>
 
               <div class="form__field">
                 <label class="form__label" for="register-password-confirm">Подтверждение пароля</label>
                 <div class="pw-wrapper">
+<<<<<<< HEAD
                   <input class="form__control" id="register-password-confirm" name="password_confirm" type="password" placeholder="Повторите пароль" required>
+=======
+                  <input 
+                    class="form__control" 
+                    id="register-password-confirm" 
+                    name="password_confirm" 
+                    type="password" 
+                    placeholder="Повторите" 
+                    /* Аналогичный паттерн для подтверждения */
+                    pattern="(?=.*[a-zA-Z]).{8,}"
+                    title="Пароль должен быть идентичен полю слева и соответствовать требованиям"
+                    required
+                  >
+>>>>>>> front/dev
                   <button type="button" class="pw-toggle-btn js-pw-toggle">
                     <span class="pw-toggle-icon"></span>
                   </button>
                 </div>
+<<<<<<< HEAD
                 <p class="form__error">Пароли должны совпадать</p>
+=======
+                <p class="form__hint" style="font-size: 12px; margin-top: 4px; color: #666;">Минимум 8 символов и 1 латинская буква</p>
+>>>>>>> front/dev
               </div>
             </div>
 
@@ -214,7 +293,10 @@
                 <span class="checkbox__box" aria-hidden="true"></span>
                 <span class="checkbox__label">Я согласен с обработкой персональных данных</span>
               </label>
+<<<<<<< HEAD
               <p class="form__error">Необходимо подтвердить согласие на обработку персональных данных.</p>
+=======
+>>>>>>> front/dev
             </div>
 
             <div class="auth-form__actions">
@@ -227,18 +309,29 @@
       </div>
     </section>
   </main>
+<<<<<<< HEAD
   <script>
     // Константа для связи с FastAPI
     const API_URL = 'http://127.0.0.1:8000';
 
     // 1. УНИВЕРСАЛЬНЫЙ ПОКАЗ/СКРЫТИЕ ПАРОЛЯ
     // Работает для всех полей, где есть кнопка .js-pw-toggle внутри .pw-wrapper
+=======
+
+  <script>
+    const API_URL = 'http://127.0.0.1:8000';
+
+    // 1. ПОКАЗ/СКРЫТИЕ ПАРОЛЯ
+>>>>>>> front/dev
     document.querySelectorAll('.js-pw-toggle').forEach(btn => {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         const wrapper = this.closest('.pw-wrapper');
         const input = wrapper.querySelector('input');
+<<<<<<< HEAD
         
+=======
+>>>>>>> front/dev
         const isPassword = input.type === 'password';
         input.type = isPassword ? 'text' : 'password';
         this.classList.toggle('pw-toggle-btn--visible', isPassword);
@@ -246,17 +339,25 @@
       });
     });
 
+<<<<<<< HEAD
     // 2. ЛОГИКА ВХОДА (LOGIN)
     const loginForm = document.querySelector('.auth-form--login');
     
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+=======
+    // 2. ЛОГИКА ВХОДА
+    const loginForm = document.querySelector('.auth-form--login');
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+>>>>>>> front/dev
       if (!loginForm.checkValidity()) {
         loginForm.reportValidity();
         return;
       }
 
+<<<<<<< HEAD
       // Собираем данные из полей
       const emailInput = loginForm.querySelector('input[type="email"], input[type="text"]');
       const passwordInput = loginForm.querySelector('input[type="password"]');
@@ -264,6 +365,11 @@
       const loginData = {
         email: emailInput.value.trim(),
         password: passwordInput.value
+=======
+      const loginData = {
+        email: document.getElementById('login-identity').value,
+        password: document.getElementById('login-password').value
+>>>>>>> front/dev
       };
 
       try {
@@ -275,29 +381,45 @@
 
         if (response.ok) {
           const result = await response.json();
+<<<<<<< HEAD
           
           // СОХРАНЯЕМ ТОКЕН (из Swagger: access_token)
           localStorage.setItem('accessToken', result.access_token);
           
           // Редирект на дашборд (убедись, что путь верный относительно твоего сервера)
           window.location.href = 'citizen/dashboard'; 
+=======
+          localStorage.setItem('accessToken', result.access_token);
+          window.location.href = '/templates/citizen/dashboard.html'; 
+>>>>>>> front/dev
         } else {
           const error = await response.json();
           alert('Ошибка входа: ' + (error.detail || 'Неверный логин или пароль'));
         }
       } catch (err) {
+<<<<<<< HEAD
         console.error('Ошибка сети:', err);
         alert('Не удалось подключиться к серверу бэкенда');
       }
     });
 
     // 3. ЛОГИКА РЕГИСТРАЦИИ (REGISTER)
+=======
+        alert('Не удалось подключиться к серверу');
+      }
+    });
+
+    // 3. ЛОГИКА РЕГИСТРАЦИИ
+>>>>>>> front/dev
     const regForm = document.querySelector('.auth-form--register');
     const pass = document.getElementById('register-password');
     const passConfirm = document.getElementById('register-password-confirm');
     const loginTabTrigger = document.getElementById('auth-mode-login');
 
+<<<<<<< HEAD
     // Функция проверки совпадения паролей (живая валидация)
+=======
+>>>>>>> front/dev
     function validatePassword() {
       if (pass.value !== passConfirm.value) {
         passConfirm.setCustomValidity("Пароли не совпадают");
@@ -306,10 +428,15 @@
       }
     }
 
+<<<<<<< HEAD
     if (pass && passConfirm) {
       pass.addEventListener('input', validatePassword);
       passConfirm.addEventListener('input', validatePassword);
     }
+=======
+    pass.addEventListener('input', validatePassword);
+    passConfirm.addEventListener('input', validatePassword);
+>>>>>>> front/dev
 
     regForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -319,6 +446,7 @@
         return;
       }
 
+<<<<<<< HEAD
       // Обработка имени: бэкенд ждет first_name и last_name
       const firstName = document.getElementById('register-first-name').value.trim();
       const lastName = document.getElementById('register-last-name').value.trim();
@@ -330,6 +458,14 @@
         last_name: lastName,
         email: email,
         password: password
+=======
+      // Исправлено: берем данные из правильных ID
+      const userData = {
+        first_name: document.getElementById('register-first-name').value.trim(),
+        last_name: document.getElementById('register-last-name').value.trim(),
+        email: document.getElementById('register-email').value,
+        password: pass.value
+>>>>>>> front/dev
       };
 
       try {
@@ -341,6 +477,7 @@
 
         if (response.ok) {
           alert('Регистрация прошла успешно! Теперь войдите.');
+<<<<<<< HEAD
           loginTabTrigger.checked = true; // Авто-переключение на вкладку входа
         } else {
           const error = await response.json();
@@ -349,6 +486,14 @@
         }
       } catch (err) {
         console.error('Ошибка:', err);
+=======
+          loginTabTrigger.checked = true;
+        } else {
+          const error = await response.json();
+          alert('Ошибка регистрации: ' + JSON.stringify(error.detail));
+        }
+      } catch (err) {
+>>>>>>> front/dev
         alert('Ошибка при регистрации');
       }
     });

@@ -1,6 +1,17 @@
+<<<<<<< HEAD
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy import and_, or_, func, select
+=======
+<<<<<<< HEAD
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, or_
+=======
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
+from sqlalchemy import and_, or_, func, select
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 from typing import Optional, List
 from datetime import datetime
 
@@ -18,6 +29,25 @@ from app.db.models import (
 from app.schemas.requests import RequestCreate, RequestUpdate
 
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+def get_request_statuses(db: Session):
+    """Получить все возможные статусы обращений"""
+    return db.query(RequestStatus).all()
+
+
+def get_request_categories(db: Session):
+    """Получить все категории обращений"""
+    return db.query(RequestCategory).all()
+
+
+def get_request_by_id(db: Session, request_id: int):
+    """Получить обращение по ID с загрузкой всех связанных данных"""
+    return (
+        db.query(Request)
+=======
+>>>>>>> front/dev
 async def get_request_statuses(db: AsyncSession):
     """Получить все возможные статусы обращений"""
     result = await db.execute(select(RequestStatus))
@@ -34,6 +64,10 @@ async def get_request_by_id(db: AsyncSession, request_id: int):
     """Получить обращение по ID с загрузкой всех связанных данных"""
     result = await db.execute(
         select(Request)
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         .options(
             joinedload(Request.user),
             joinedload(Request.district),
@@ -42,6 +76,18 @@ async def get_request_by_id(db: AsyncSession, request_id: int):
             joinedload(Request.assigned_deputy).joinedload(Deputy.user),
             joinedload(Request.photos),
         )
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        .filter(Request.id == request_id)
+        .first()
+    )
+
+
+def get_requests(
+    db: Session,
+=======
+>>>>>>> front/dev
         .where(Request.id == request_id)
     )
     return result.scalar_one_or_none()
@@ -49,6 +95,10 @@ async def get_request_by_id(db: AsyncSession, request_id: int):
 
 async def get_requests(
     db: AsyncSession,
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     skip: int = 0,
     limit: int = 20,
     user_id: Optional[int] = None,
@@ -71,8 +121,17 @@ async def get_requests(
     - assigned_deputy_id: фильтр по ID назначенного депутата
     - include_closed: включать ли закрытые обращения
     """
+<<<<<<< HEAD
     # Build query with eager loading
     stmt = select(Request).options(
+=======
+<<<<<<< HEAD
+    query = db.query(Request).options(
+=======
+    # Build query with eager loading
+    stmt = select(Request).options(
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         joinedload(Request.user),
         joinedload(Request.district),
         joinedload(Request.category),
@@ -100,14 +159,36 @@ async def get_requests(
     
     if not include_closed:
         # Исключаем закрытые обращения (нужно знать ID статуса "закрыто")
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        closed_status = db.query(RequestStatus).filter(RequestStatus.code == "closed").first()
+=======
+>>>>>>> front/dev
         result = await db.execute(
             select(RequestStatus).where(RequestStatus.code == "closed")
         )
         closed_status = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         if closed_status:
             filters.append(Request.status_id != closed_status.id)
     
     if filters:
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        query = query.filter(and_(*filters))
+    
+    # Получаем общее количество (для пагинации на фронтенде)
+    total = query.count()
+    
+    # Применяем пагинацию и сортировку
+    requests = query.order_by(Request.created_at.desc()).offset(skip).limit(limit).all()
+=======
+>>>>>>> front/dev
         stmt = stmt.where(and_(*filters))
     
     # Get total count for pagination
@@ -119,6 +200,10 @@ async def get_requests(
     stmt = stmt.order_by(Request.created_at.desc()).offset(skip).limit(limit)
     result = await db.execute(stmt)
     requests = result.scalars().unique().all()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     
     return {
         "items": requests,
@@ -128,13 +213,29 @@ async def get_requests(
     }
 
 
+<<<<<<< HEAD
 async def create_request(db: AsyncSession, request_data: RequestCreate, user_id: int):
+=======
+<<<<<<< HEAD
+def create_request(db: Session, request_data: RequestCreate, user_id: int):
+=======
+async def create_request(db: AsyncSession, request_data: RequestCreate, user_id: int):
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
     Создать новое обращение
     
     Параметры:
     - request_data: данные обращения из схемы
     - user_id: ID пользователя, создающего обращение
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    """
+    # Получаем статус "новое" по умолчанию
+    default_status = db.query(RequestStatus).filter(RequestStatus.code == "new").first()
+=======
+>>>>>>> front/dev
     
     DATA INTEGRITY: Перед созданием записи выполняется проверка существования
     всех связанных сущностей (district, category). Это предотвращает создание
@@ -163,12 +264,26 @@ async def create_request(db: AsyncSession, request_data: RequestCreate, user_id:
         select(RequestStatus).where(RequestStatus.code == "new")
     )
     default_status = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if not default_status:
         # Если статус не найден, создаем его (на всякий случай)
         default_status = RequestStatus(code="new", name="Новое")
         db.add(default_status)
+<<<<<<< HEAD
         await db.commit()
         await db.refresh(default_status)
+=======
+<<<<<<< HEAD
+        db.commit()
+        db.refresh(default_status)
+=======
+        await db.commit()
+        await db.refresh(default_status)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     
     # Создаем обращение
     request = Request(
@@ -186,8 +301,18 @@ async def create_request(db: AsyncSession, request_data: RequestCreate, user_id:
     )
     
     db.add(request)
+<<<<<<< HEAD
     await db.commit()
     await db.refresh(request)
+=======
+<<<<<<< HEAD
+    db.commit()
+    db.refresh(request)
+=======
+    await db.commit()
+    await db.refresh(request)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     
     # Добавляем фото, если они есть
     if request_data.photo_urls:
@@ -199,8 +324,18 @@ async def create_request(db: AsyncSession, request_data: RequestCreate, user_id:
             )
             db.add(photo)
         
+<<<<<<< HEAD
         await db.commit()
         await db.refresh(request)
+=======
+<<<<<<< HEAD
+        db.commit()
+        db.refresh(request)
+=======
+        await db.commit()
+        await db.refresh(request)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     
     # Записываем в историю статусов
     status_history = StatusHistory(
@@ -221,6 +356,19 @@ async def create_request(db: AsyncSession, request_data: RequestCreate, user_id:
     )
     db.add(system_message)
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    db.commit()
+    
+    # Загружаем связанные данные для ответа
+    return get_request_by_id(db, request.id)
+
+
+def update_request(
+    db: Session,
+=======
+>>>>>>> front/dev
     await db.commit()
     
     # Загружаем связанные данные для ответа
@@ -229,6 +377,10 @@ async def create_request(db: AsyncSession, request_data: RequestCreate, user_id:
 
 async def update_request(
     db: AsyncSession,
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     request_id: int,
     request_update: RequestUpdate,
     changed_by_user_id: int
@@ -240,6 +392,13 @@ async def update_request(
     - request_id: ID обращения
     - request_update: данные для обновления
     - changed_by_user_id: ID пользователя, который вносит изменения
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    """
+    request = db.query(Request).filter(Request.id == request_id).first()
+=======
+>>>>>>> front/dev
     
     DATA INTEGRITY: При обновлении district_id или category_id выполняется
     проверка существования связанных записей перед коммитом.
@@ -248,6 +407,10 @@ async def update_request(
         select(Request).where(Request.id == request_id)
     )
     request = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if not request:
         return None
     
@@ -256,6 +419,15 @@ async def update_request(
     # Обновляем поля, если они предоставлены
     update_data = request_update.dict(exclude_unset=True)
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    # Особая обработка для смены статуса
+    if "status_id" in update_data and update_data["status_id"] != old_status_id:
+        # Проверяем, что статус существует
+        new_status = db.query(RequestStatus).filter(RequestStatus.id == update_data["status_id"]).first()
+=======
+>>>>>>> front/dev
     # Data integrity: ensuring foreign key references exist before commit
     # Проверяем существование нового района при смене district_id
     if "district_id" in update_data and update_data["district_id"] != request.district_id:
@@ -283,6 +455,10 @@ async def update_request(
             select(RequestStatus).where(RequestStatus.id == update_data["status_id"])
         )
         new_status = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         if not new_status:
             raise ValueError(f"Статус с ID {update_data['status_id']} не найден")
         
@@ -301,10 +477,20 @@ async def update_request(
         db.add(status_history)
         
         # Создаем системное сообщение о смене статуса
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        old_status = db.query(RequestStatus).filter(RequestStatus.id == old_status_id).first()
+=======
+>>>>>>> front/dev
         result = await db.execute(
             select(RequestStatus).where(RequestStatus.id == old_status_id)
         )
         old_status = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         system_message = Message(
             request_id=request_id,
             user_id=changed_by_user_id,
@@ -321,6 +507,18 @@ async def update_request(
     
     request.updated_at = datetime.utcnow()
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    db.commit()
+    db.refresh(request)
+    
+    return get_request_by_id(db, request_id)
+
+
+def assign_deputy(db: Session, request_id: int, deputy_id: int, assigned_by_user_id: int):
+=======
+>>>>>>> front/dev
     await db.commit()
     await db.refresh(request)
     
@@ -328,6 +526,10 @@ async def update_request(
 
 
 async def assign_deputy(db: AsyncSession, request_id: int, deputy_id: int, assigned_by_user_id: int):
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
     Назначить депутата на обращение
     
@@ -336,18 +538,38 @@ async def assign_deputy(db: AsyncSession, request_id: int, deputy_id: int, assig
     - deputy_id: ID депутата
     - assigned_by_user_id: ID пользователя, который назначает (админ)
     """
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    request = db.query(Request).filter(Request.id == request_id).first()
+=======
+>>>>>>> front/dev
     result = await db.execute(
         select(Request).where(Request.id == request_id)
     )
     request = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if not request:
         return None
     
     # Проверяем, что депутат существует и привязан к тому же району
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    deputy = db.query(Deputy).filter(Deputy.id == deputy_id).first()
+=======
+>>>>>>> front/dev
     result = await db.execute(
         select(Deputy).where(Deputy.id == deputy_id)
     )
     deputy = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if not deputy:
         raise ValueError(f"Депутат с ID {deputy_id} не найден")
     
@@ -359,10 +581,20 @@ async def assign_deputy(db: AsyncSession, request_id: int, deputy_id: int, assig
     request.updated_at = datetime.utcnow()
     
     # Создаем системное сообщение о назначении
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    deputy_user = db.query(User).filter(User.id == deputy.user_id).first()
+=======
+>>>>>>> front/dev
     result = await db.execute(
         select(User).where(User.id == deputy.user_id)
     )
     deputy_user = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     message_text = f"Обращение назначено депутату {deputy_user.first_name} {deputy_user.last_name}"
     
     system_message = Message(
@@ -374,6 +606,19 @@ async def assign_deputy(db: AsyncSession, request_id: int, deputy_id: int, assig
     )
     db.add(system_message)
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    db.commit()
+    db.refresh(request)
+    
+    return get_request_by_id(db, request_id)
+
+
+def add_message_to_request(
+    db: Session,
+=======
+>>>>>>> front/dev
     await db.commit()
     await db.refresh(request)
     
@@ -382,6 +627,10 @@ async def assign_deputy(db: AsyncSession, request_id: int, deputy_id: int, assig
 
 async def add_message_to_request(
     db: AsyncSession,
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     request_id: int,
     user_id: int,
     text: str,
@@ -396,10 +645,20 @@ async def add_message_to_request(
     - text: текст сообщения
     - is_system: является ли сообщение системным
     """
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    request = db.query(Request).filter(Request.id == request_id).first()
+=======
+>>>>>>> front/dev
     result = await db.execute(
         select(Request).where(Request.id == request_id)
     )
     request = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if not request:
         return None
     
@@ -412,17 +671,40 @@ async def add_message_to_request(
     )
     
     db.add(message)
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    db.commit()
+    db.refresh(message)
+    
+    # Обновляем updated_at у обращения
+    request.updated_at = datetime.utcnow()
+    db.commit()
+=======
+>>>>>>> front/dev
     await db.commit()
     await db.refresh(message)
     
     # Обновляем updated_at у обращения
     request.updated_at = datetime.utcnow()
     await db.commit()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     
     return message
 
 
+<<<<<<< HEAD
 async def get_request_messages(db: AsyncSession, request_id: int, skip: int = 0, limit: int = 50):
+=======
+<<<<<<< HEAD
+def get_request_messages(db: Session, request_id: int, skip: int = 0, limit: int = 50):
+=======
+async def get_request_messages(db: AsyncSession, request_id: int, skip: int = 0, limit: int = 50):
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
     Получить сообщения по обращению
     
@@ -451,20 +733,52 @@ async def get_request_messages(db: AsyncSession, request_id: int, skip: int = 0,
     }
 
 
+<<<<<<< HEAD
 async def get_request_status_history(db: AsyncSession, request_id: int):
+=======
+<<<<<<< HEAD
+def get_request_status_history(db: Session, request_id: int):
+=======
+async def get_request_status_history(db: AsyncSession, request_id: int):
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
     Получить историю изменения статусов обращения
     
     Параметры:
     - request_id: ID обращения
     """
+<<<<<<< HEAD
     result = await db.execute(
         select(StatusHistory)
+=======
+<<<<<<< HEAD
+    history = (
+        db.query(StatusHistory)
+=======
+    result = await db.execute(
+        select(StatusHistory)
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         .options(
             joinedload(StatusHistory.old_status),
             joinedload(StatusHistory.new_status),
             joinedload(StatusHistory.changed_by_user)
         )
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        .filter(StatusHistory.request_id == request_id)
+        .order_by(StatusHistory.created_at.desc())
+        .all()
+    )
+    
+    return history
+
+
+def delete_request(db: Session, request_id: int) -> bool:
+=======
+>>>>>>> front/dev
         .where(StatusHistory.request_id == request_id)
         .order_by(StatusHistory.created_at.desc())
     )
@@ -473,20 +787,46 @@ async def get_request_status_history(db: AsyncSession, request_id: int):
 
 
 async def delete_request(db: AsyncSession, request_id: int) -> bool:
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
     Удалить обращение (только для админов)
     
     Параметры:
     - request_id: ID обращения
     """
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    request = db.query(Request).filter(Request.id == request_id).first()
+=======
+>>>>>>> front/dev
     result = await db.execute(
         select(Request).where(Request.id == request_id)
     )
     request = result.scalar_one_or_none()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     if not request:
         return False
     
     # Сначала удаляем связанные данные
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    db.query(Message).filter(Message.request_id == request_id).delete()
+    db.query(RequestPhoto).filter(RequestPhoto.request_id == request_id).delete()
+    db.query(StatusHistory).filter(StatusHistory.request_id == request_id).delete()
+    
+    # Затем удаляем само обращение
+    db.delete(request)
+    db.commit()
+=======
+>>>>>>> front/dev
     await db.execute(
         delete(Message).where(Message.request_id == request_id)
     )
@@ -500,16 +840,47 @@ async def delete_request(db: AsyncSession, request_id: int) -> bool:
     # Затем удаляем само обращение
     await db.delete(request)
     await db.commit()
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     
     return True
 
 
+<<<<<<< HEAD
 async def get_statistics(db: AsyncSession, district_id: Optional[int] = None):
+=======
+<<<<<<< HEAD
+def get_statistics(db: Session, district_id: Optional[int] = None):
+=======
+async def get_statistics(db: AsyncSession, district_id: Optional[int] = None):
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """
     Получить статистику по обращениям
     
     Параметры:
     - district_id: опциональный фильтр по району
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    """
+    query = db.query(Request)
+    
+    if district_id:
+        query = query.filter(Request.district_id == district_id)
+    
+    total = query.count()
+    
+    # Статистика по статусам
+    statuses = db.query(RequestStatus).all()
+    status_stats = {}
+    
+    for status in statuses:
+        count = query.filter(Request.status_id == status.id).count()
+=======
+>>>>>>> front/dev
     
     OPTIMIZATION: Этот метод использует ОДИН агрегирующий SQL-запрос с GROUP BY
     вместо N+1 отдельных SELECT COUNT запросов. Ранее для каждого статуса и категории
@@ -547,12 +918,27 @@ async def get_statistics(db: AsyncSession, district_id: Optional[int] = None):
     for status in statuses:
         # Находим count из агрегированного результата
         count = next((r.count for r in status_stats_raw if r.status_id == status.id), 0)
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         status_stats[status.code] = {
             "name": status.name,
             "count": count,
             "percentage": round(count / total * 100, 2) if total > 0 else 0
         }
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    # Статистика по категориям
+    categories = db.query(RequestCategory).all()
+    category_stats = {}
+    
+    for category in categories:
+        count = query.filter(Request.category_id == category.id).count()
+=======
+>>>>>>> front/dev
     # OPTIMIZATION: Один запрос с GROUP BY вместо цикла с отдельными COUNT для каждой категории
     # Было: for category in categories: count = query.filter(...).count() -> N запросов
     # Стало: один запрос с группировкой по category_id
@@ -572,11 +958,31 @@ async def get_statistics(db: AsyncSession, district_id: Optional[int] = None):
     for category in categories:
         # Находим count из агрегированного результата
         count = next((r.count for r in category_stats_raw if r.category_id == category.id), 0)
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         category_stats[category.name] = {
             "count": count,
             "percentage": round(count / total * 100, 2) if total > 0 else 0
         }
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    # Среднее время решения
+    closed_status = db.query(RequestStatus).filter(RequestStatus.code == "closed").first()
+    if closed_status:
+        closed_requests = query.filter(Request.status_id == closed_status.id).all()
+        resolution_times = []
+        for req in closed_requests:
+            if req.closed_at and req.created_at:
+                delta = req.closed_at - req.created_at
+                resolution_times.append(delta.days)
+        
+        avg_resolution_days = sum(resolution_times) / len(resolution_times) if resolution_times else 0
+=======
+>>>>>>> front/dev
     # Среднее время решения - используем SQL AVG агрегацию
     result = await db.execute(
         select(RequestStatus).where(RequestStatus.code == "closed")
@@ -594,6 +1000,10 @@ async def get_statistics(db: AsyncSession, district_id: Optional[int] = None):
         
         avg_result = await db.execute(resolution_query)
         avg_resolution_days = avg_result.scalar() or 0
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     else:
         avg_resolution_days = 0
     
@@ -605,13 +1015,30 @@ async def get_statistics(db: AsyncSession, district_id: Optional[int] = None):
         "district_id": district_id
     }
 
+<<<<<<< HEAD
 async def check_duplicate_request(db: AsyncSession, user_id: int, text: str, hours: int = 24) -> bool:
+=======
+<<<<<<< HEAD
+def check_duplicate_request(db: Session, user_id: int, text: str, hours: int = 24) -> bool:
+=======
+async def check_duplicate_request(db: AsyncSession, user_id: int, text: str, hours: int = 24) -> bool:
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     """Проверка на похожие обращения за последние N часов"""
     from datetime import datetime, timedelta
     from difflib import SequenceMatcher
     
     cutoff_time = datetime.utcnow() - timedelta(hours=hours)
     
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    recent = db.query(Request).filter(
+        Request.user_id == user_id,
+        Request.created_at >= cutoff_time
+    ).all()
+=======
+>>>>>>> front/dev
     result = await db.execute(
         select(Request).where(
             Request.user_id == user_id,
@@ -619,6 +1046,10 @@ async def check_duplicate_request(db: AsyncSession, user_id: int, text: str, hou
         )
     )
     recent = list(result.scalars().all())
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
     
     for req in recent:
         # Сравниваем заголовки

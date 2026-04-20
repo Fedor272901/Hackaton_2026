@@ -2,6 +2,15 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from fastapi import HTTPException, Request
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+class RateLimiter:
+    def __init__(self, max_requests: int = 5, window_seconds: int = 86400):
+        self.max_requests = max_requests  # макс запросов
+        self.window = window_seconds  # за период (сек)
+=======
+>>>>>>> front/dev
 from app.core.config import settings
 
 
@@ -10,6 +19,10 @@ class RateLimiter:
         # Magic number extracted to config for environment flexibility
         self.max_requests = max_requests if max_requests is not None else settings.MAX_REQUESTS
         self.window = window_seconds if window_seconds is not None else settings.RATE_LIMIT_WINDOW_SECONDS
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
         self.requests = defaultdict(list)  # user_id -> [timestamps]
     
     def check(self, user_id: int) -> bool:
@@ -30,5 +43,14 @@ class RateLimiter:
         self.requests[user_id].append(now)
         return True
 
+<<<<<<< HEAD
 
 rate_limiter = RateLimiter()
+=======
+<<<<<<< HEAD
+rate_limiter = RateLimiter(max_requests=5, window_seconds=86400)
+=======
+
+rate_limiter = RateLimiter()
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev

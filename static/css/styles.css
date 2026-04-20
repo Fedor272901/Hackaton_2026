@@ -20,6 +20,11 @@
   --color-slate-50: #f8fafc;
   --color-white: #ffffff;
   --shadow-lg: 0 24px 50px rgba(15, 23, 42, 0.14);
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> front/dev
   --shadow-md: 0 18px 34px rgba(15, 23, 42, 0.1);
   --shadow-sm: 0 10px 22px rgba(15, 23, 42, 0.08);
   --radius-xl: 28px;
@@ -5193,6 +5198,10 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
   --color-slate-50: #f8fafc;
   --color-white: #ffffff;
   --shadow-lg: 0 24px 50px rgba(15, 23, 42, 0.14);
+<<<<<<< HEAD
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
   --shadow-md: 0 18px 34px rgba(23, 37, 71, 0.1);
   --shadow-sm: 0 10px 22px rgba(15, 23, 42, 0.08);
   --radius-xl: 28px;
@@ -6830,4 +6839,88 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
   padding: 0.6rem 1.5rem;
   font-size: 0.9rem;
   width: auto; /* Чтобы не растягивалась на всю ширину */
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Расстояние между квадратом и текстом */
+}
+
+.profile-card__avatar {
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-primary); /* Нежно-синий фон */
+  color: var(--color-white);               /* Белый текст букв */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px; /* Скруглённый квадрат (не круг!) */
+  flex-shrink: 0;
+}
+
+.profile-card__info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.profile-card__name {
+  font-weight: 600;
+  color: var(--color-slate-900);
+  margin: 0;
+}
+
+.profile-card__role {
+  font-size: 12px;
+  color: var(--color-slate-500);
+  margin: 0;
+}
+
+.appeal-card__status--rejected {
+  background-color: #fee2e2; /* Нежно-красный фон (прозрачно-красный) */
+  color: #dc2626;            /* Насыщенный красный текст */
+}
+
+/* Принудительно скрываем пустой блок по умолчанию */
+#empty-state-block { display: none !important; }
+  
+/* Класс для открытия модалки */
+.modal.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  display: flex; /* Чтобы перекрыть стандартный display: none */
+}
+
+/* В дополнение к вашим стилям */
+.modal {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal:target {
+    display: flex;
+    opacity: 1;
+}
+
+/* Исправление для "пустого" блока, чтобы он не перекрывал список */
+#empty-state-block[style*="display: flex"] + #appeals-container {
+    display: none;
+}
+
+.modal.is-active {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+=======
+>>>>>>> 9b6d3f7 (немного переписанна логика бекэнда)
+>>>>>>> front/dev
 }
