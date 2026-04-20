@@ -1737,3 +1737,12 @@ body:has(#appeal-success:target) #dashboard-view-history:checked ~ .dashboard-sh
     pointer-events: auto !important;
 }
 
+.photo-slot {
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
+}
+
+.photo-slot:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
