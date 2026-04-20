@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <script src="https://maps.api.2gis.ru/2.0/loader.js?pkg=full"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Личный кабинет гражданина для подачи и отслеживания обращений к местным депутатам.">
@@ -159,7 +160,7 @@
 
               <div class="form-group">
                 <label class="form-label">Прикрепите фото (максимум 3 фото, до 5 МБ каждое)</label>
-                
+
                 <div class="photo-slots-preview" id="photo-slots-container" style="display: flex; gap: 12px; margin-bottom: 12px;">
                   <div class="photo-slot" id="slot-1" style="width: 100px; height: 100px; border: 2px dashed #cbd5e1; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; overflow: hidden; background-size: cover; background-position: center;">фото 1</div>
                   <div class="photo-slot" id="slot-2" style="width: 100px; height: 100px; border: 2px dashed #cbd5e1; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; overflow: hidden; background-size: cover; background-position: center;">фото 2</div>
@@ -193,9 +194,9 @@
                         placeholder="Начните вводить адрес (город, улица...)"
                         autocomplete="off"
                         required>
-                      
+
                       <div id="appeal-address-suggestions" style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; margin-bottom: 15px;"></div>
-                      
+
                       <p class="form__error">Укажите адрес проблемы.</p>
                     </div>
                     <div id="appeal-address-suggestions" style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; margin-bottom: 15px;">
@@ -270,11 +271,11 @@
         <div class="section-card">
           <h3 class="modal__section-title" style="color: var(--color-slate-500); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 4px;">Краткое описание проблемы</h3>
           <p class="modal__text" id="modal-title-brief" style="font-weight: 700; font-size: 1.1rem; margin-bottom: 12px;">...</p>
-          
+
           <h3 class="modal__section-title" style="color: var(--color-slate-500); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 4px;">Подробное описание</h3>
           <p class="modal__text" id="modal-description">...</p>
         </div>
-        
+
         <div class="section-card modal__section--split">
           <div>
             <h3 class="modal__section-title">Адрес</h3>
@@ -283,7 +284,7 @@
           </div>
           <div class="map-placeholder" style="border-radius: 12px;"></div>
         </div>
-        
+
         <div class="section-card">
           <h3 class="modal__section-title" style="margin-bottom: 12px;">Прикреплённые фото</h3>
           <div class="gallery-grid">
@@ -315,422 +316,516 @@
     </div>
   </section>
   <script>
-    const API_URL = 'http://127.0.0.1:8000';
-    const DADATA_TOKEN = "df7e27b6c71edb9ea650cec6370c64eeaac403ea";
-    
-    // Глобальное хранилище для обращений, чтобы не передавать огромные объекты через HTML-атрибуты
-    let currentAppeals = [];
+      const API_URL = 'http://127.0.0.1:8000';
+      const DADATA_TOKEN = "df7e27b6c71edb9ea650cec6370c64eeaac403ea";
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initDashboard();
-      initDaData();
-    });
+      let currentAppeals = [];
+      let map;
+      let marker;
 
-    async function initDashboard() {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        window.location.href = 'auth.html';
-        return;
-      }
+      document.addEventListener('DOMContentLoaded', () => {
+          initDashboard();
+          initDaData();
+          initFormSubmit();
+      });
 
-      // Запускаем всё параллельно для скорости
-      await Promise.all([
-        fetchUserProfile(token),
-        loadAppealsData(token)
-      ]);
-    }
-
-    // 1. Получение профиля
-    async function fetchUserProfile(token) {
-      try {
-        const response = await fetch(`${API_URL}/users/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          
-          // Инициалы
-          const initialsElement = document.getElementById('user-initials');
-          if (initialsElement) {
-            const f = userData.first_name ? userData.first_name[0].toUpperCase() : '';
-            const l = userData.last_name ? userData.last_name[0].toUpperCase() : '';
-            initialsElement.textContent = f + l;
+      async function initDashboard() {
+          const token = localStorage.getItem('accessToken');
+          if (!token) {
+              window.location.href = 'auth.html';
+              return;
           }
 
-          // Роль
-          const roleElement = document.getElementById('user-role');
-          if (roleElement) {
-            roleElement.textContent = userData.role?.name || userData.role || 'Гражданин';
+          await Promise.all([
+              fetchUserProfile(token),
+              loadAppealsData(token)
+          ]);
+      }
+
+      async function fetchUserProfile(token) {
+          try {
+              const response = await fetch(`${API_URL}/users/me`, {
+                  headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                  }
+              });
+
+              if (response.ok) {
+                  const userData = await response.json();
+
+                  const initialsElement = document.getElementById('user-initials');
+                  if (initialsElement) {
+                      const f = userData.first_name ? userData.first_name[0].toUpperCase() : '';
+                      const l = userData.last_name ? userData.last_name[0].toUpperCase() : '';
+                      initialsElement.textContent = f + l;
+                  }
+
+                  const roleElement = document.getElementById('user-role');
+                  if (roleElement) {
+                      roleElement.textContent = userData.role?.name || userData.role || 'Гражданин';
+                  }
+
+                  const nameElement = document.querySelector('.profile-card__name');
+                  if (nameElement) {
+                      nameElement.textContent = `${userData.first_name} ${userData.last_name}`;
+                  }
+              } else if (response.status === 401) {
+                  logout();
+              }
+          } catch (err) {
+              console.error('Ошибка профиля:', err);
+          }
+      }
+
+      async function loadAppealsData(token) {
+          const container = document.getElementById('appeals-container');
+          if (!container) return;
+
+          try {
+              const response = await fetch(`${API_URL}/requests/my`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
+
+              if (response.ok) {
+                  currentAppeals = await response.json();
+                  updateStatsUI(currentAppeals);
+                  renderAppealsUI(currentAppeals, container);
+              } else if (response.status === 401) {
+                  logout();
+              }
+          } catch (err) {
+              console.error('Ошибка загрузки данных:', err);
+          }
+      }
+
+      function updateStatsUI(appeals) {
+          const total = document.getElementById('stats-total');
+          const active = document.getElementById('stats-active');
+          const completed = document.getElementById('stats-completed');
+
+          if (total) total.textContent = appeals.length;
+          if (active) active.textContent = appeals.filter(a => ['В работе', 'На рассмотрении'].includes(a.status?.name)).length;
+          if (completed) completed.textContent = appeals.filter(a => ['Завершено', 'Выполнено'].includes(a.status?.name)).length;
+      }
+
+      function renderAppealsUI(appeals, container) {
+          if (appeals.length === 0) {
+              container.innerHTML = '<p style="text-align: center; padding: 20px;">У вас пока нет обращений.</p>';
+              return;
           }
 
-          // Имя
-          const nameElement = document.querySelector('.profile-card__name');
-          if (nameElement) {
-            nameElement.textContent = `${userData.first_name} ${userData.last_name}`;
+          container.innerHTML = appeals.map((appeal, index) => {
+              const date = new Date(appeal.created_at).toLocaleDateString('ru-RU');
+              let statusClass = 'appeal-card__status--progress';
+
+              if (appeal.status?.name === 'В работе') statusClass = 'appeal-card__status--work';
+              else if (['Выполнено', 'Завершено'].includes(appeal.status?.name)) statusClass = 'appeal-card__status--done';
+              else if (appeal.status?.name === 'Отклонено') statusClass = 'appeal-card__status--rejected';
+
+              return `
+                  <article class="appeal-card">
+                      <div class="appeal-card__meta">
+                          <p class="appeal-card__number">№${appeal.id}</p>
+                          <p class="appeal-card__date">${date}</p>
+                      </div>
+                      <div class="appeal-card__body">
+                          <span class="appeal-card__badge">${appeal.category?.name || 'Общее'}</span>
+                          <h2 class="appeal-card__title">${escapeHtml(appeal.title)}</h2>
+                          <p class="appeal-card__excerpt">${escapeHtml(appeal.description.substring(0, 100))}...</p>
+                      </div>
+                      <div class="appeal-card__status-wrap">
+                          <span class="appeal-card__status ${statusClass}">${appeal.status?.name || 'Новое'}</span>
+                          <button class="text-link text-link--strong" onclick="openAppealDetails(${appeal.id})">Подробнее</button>
+                      </div>
+                  </article>`;
+          }).join('');
+      }
+
+      function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+      }
+
+      // Функция открытия деталей по ID
+      window.openAppealDetails = async function(appealId) {
+          const token = localStorage.getItem('accessToken');
+          if (!token) return;
+
+          try {
+              const response = await fetch(`${API_URL}/requests/${appealId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
+
+              if (response.ok) {
+                  const appeal = await response.json();
+                  await showAppealModal(appeal, token);
+              }
+          } catch (err) {
+              console.error('Ошибка загрузки деталей:', err);
           }
-        } else if (response.status === 401) {
-          logout();
-        }
-      } catch (err) {
-        console.error('Ошибка профиля:', err);
-      }
-    }
+      };
 
-    // 2. Загрузка данных (статистика + список) одним махом
-    async function loadAppealsData(token) {
-      const container = document.getElementById('appeals-container');
-      if (!container) return;
+      async function showAppealModal(appeal, token) {
+          const date = new Date(appeal.created_at).toLocaleDateString('ru-RU');
 
-      try {
-        const response = await fetch(`${API_URL}/requests/my`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+          document.getElementById('modal-title').textContent = appeal.title;
+          document.getElementById('modal-subtitle').textContent = `${date} · №${appeal.id}`;
+          document.getElementById('modal-description').textContent = appeal.description;
 
-        if (response.ok) {
-          currentAppeals = await response.json();
-          
-          // Обновляем цифры статистики
-          updateStatsUI(currentAppeals);
-          
-          // Рендерим список
-          renderAppealsUI(currentAppeals, container);
-        }
-      } catch (err) {
-        console.error('Ошибка загрузки данных:', err);
-      }
-    }
+          let statusClass = 'appeal-card__status--progress';
+          if (appeal.status?.name === 'В работе') statusClass = 'appeal-card__status--work';
+          if (['Выполнено', 'Завершено'].includes(appeal.status?.name)) statusClass = 'appeal-card__status--done';
+          if (appeal.status?.name === 'Отклонено') statusClass = 'appeal-card__status--rejected';
 
-    function updateStatsUI(appeals) {
-      const total = document.getElementById('stats-total');
-      const active = document.getElementById('stats-active');
-      const completed = document.getElementById('stats-completed');
+          const meta = document.getElementById('modal-meta');
+          if (meta) {
+              meta.innerHTML = `
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 700;">КАТЕГОРИЯ:</span>
+                      <span class="appeal-card__badge">${(appeal.category?.name || 'ОБЩЕЕ').toUpperCase()}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 700;">СТАТУС:</span>
+                      <span class="appeal-card__status ${statusClass}">${appeal.status?.name?.toUpperCase() || 'НОВОЕ'}</span>
+                  </div>
+              `;
+          }
 
-      if (total) total.textContent = appeals.length;
-      if (active) active.textContent = appeals.filter(a => ['В работе', 'На рассмотрении'].includes(a.status.name)).length;
-      if (completed) completed.textContent = appeals.filter(a => ['Завершено', 'Выполнено'].includes(a.status.name)).length;
-    }
+          const address = appeal.address || 'Адрес не указан';
+          document.getElementById('modal-address').textContent = address;
+          document.getElementById('modal-map-link').href = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`;
 
-    function renderAppealsUI(appeals, container) {
-      if (appeals.length === 0) {
-        container.innerHTML = '<p style="text-align: center; padding: 20px;">У вас пока нет обращений.</p>';
-        return;
-      }
+          const galleryContainer = document.querySelector('.gallery-grid');
+          if (galleryContainer) {
+              const photos = appeal.photos || [];
+              galleryContainer.innerHTML = photos.length > 0
+                  ? photos.map(photo => `
+                      <div class="gallery-grid__item" style="border-radius: 12px; overflow: hidden; height: 100px;">
+                          <img src="${photo.file_url}" alt="Фото" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="window.open('${photo.file_url}', '_blank')">
+                      </div>
+                  `).join('')
+                  : `<p style="color: #94a3b8;">Фотографии не прикреплены</p>`;
+          }
 
-      container.innerHTML = appeals.map((appeal, index) => {
-        const date = new Date(appeal.created_at).toLocaleDateString('ru-RU');
-        let statusClass = 'appeal-card__status--progress';
-        
-        if (appeal.status.name === 'В работе') statusClass = 'appeal-card__status--work';
-        else if (['Выполнено', 'Завершено'].includes(appeal.status.name)) statusClass = 'appeal-card__status--done';
-        else if (appeal.status.name === 'Отклонено') statusClass = 'appeal-card__status--rejected';
+          const responseContainer = document.getElementById('modal-response-container');
+          responseContainer.innerHTML = '<p>Загрузка ответа...</p>';
 
-        return `
-          <article class="appeal-card">
-            <div class="appeal-card__meta">
-              <p class="appeal-card__number">№${appeal.id}</p>
-              <p class="appeal-card__date">${date}</p>
-            </div>
-            <div class="appeal-card__body">
-              <span class="appeal-card__badge">${appeal.category?.name || 'Общее'}</span>
-              <h2 class="appeal-card__title">${appeal.title}</h2>
-              <p class="appeal-card__excerpt">${appeal.description.substring(0, 100)}...</p>
-            </div>
-            <div class="appeal-card__status-wrap">
-              <span class="appeal-card__status ${statusClass}">${appeal.status.name}</span>
-              <button class="text-link text-link--strong" 
-                      onclick="handleOpenDetails(${index})" 
-                      style="background:none; border:none; padding:0; cursor:pointer; font:inherit; color:var(--color-primary-600);">
-                Подробнее
-              </button>
-            </div>
-          </article>`;
-      }).join('');
-    }
+          try {
+              const res = await fetch(`${API_URL}/requests/${appeal.id}/messages`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
 
-    // Прослойка для открытия деталей по индексу в массиве
-    function handleOpenDetails(index) {
-      const appeal = currentAppeals[index];
-      if (appeal) openAppealDetails(appeal);
-    }
+              if (res.ok) {
+                  const messages = await res.json();
+                  const officialMessage = messages[0];
 
-    async function openAppealDetails(appeal) {
-      const token = localStorage.getItem('accessToken');
-      const date = new Date(appeal.created_at).toLocaleDateString('ru-RU');
-      
-      document.getElementById('modal-title').textContent = appeal.title;
-      document.getElementById('modal-subtitle').textContent = `${date} · №${appeal.id}`;
-      document.getElementById('modal-description').textContent = appeal.description;
-      
-      // Категория и статус
-      let statusClass = 'appeal-card__status--progress';
-      if (appeal.status.name === 'В работе') statusClass = 'appeal-card__status--work';
-      if (['Выполнено', 'Завершено'].includes(appeal.status.name)) statusClass = 'appeal-card__status--done';
-      if (appeal.status.name === 'Отклонено') statusClass = 'appeal-card__status--rejected';
+                  if (officialMessage) {
+                      responseContainer.innerHTML = `
+                          <div class="section-card" style="border: 2px solid #3b82f61a; padding: 20px; border-radius: 16px;">
+                              <h3 style="color: #3b82f6;">Ответ депутата</h3>
+                              <p>${escapeHtml(officialMessage.text)}</p>
+                              <p style="color: #64748b; font-size: 0.8rem;">${new Date(officialMessage.created_at).toLocaleDateString('ru-RU')}</p>
+                          </div>`;
+                  } else {
+                      responseContainer.innerHTML = '<p>Ответ еще не получен</p>';
+                  }
+              }
+          } catch (err) {
+              responseContainer.innerHTML = '<p style="color: red;">Ошибка загрузки</p>';
+          }
 
-      const meta = document.getElementById('modal-meta');
-      if (meta) {
-          meta.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-weight: 700; font-size: 0.85rem; color: var(--color-slate-600);">КАТЕГОРИЯ:</span>
-              <span class="appeal-card__badge" style="margin: 0;">${(appeal.category?.name || 'ОБЩЕЕ').toUpperCase()}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-weight: 700; font-size: 0.85rem; color: var(--color-slate-600);">СТАТУС:</span>
-              <span class="appeal-card__status ${statusClass}" style="margin: 0;">${appeal.status.name.toUpperCase()}</span>
-            </div>
-          `;
+          window.location.hash = 'appeal-details-modal';
       }
 
-      // Адрес
-      const address = appeal.address || 'Адрес не указан';
-      document.getElementById('modal-address').textContent = address;
-      document.getElementById('modal-map-link').href = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`;
-      
-      // Фотографии
-      const galleryContainer = document.querySelector('.gallery-grid');
-      if (galleryContainer) {
-        const photos = appeal.photos || [];
-        galleryContainer.innerHTML = photos.length > 0 
-          ? photos.map(photo => {
-              const imgUrl = photo.file_url.startsWith('http') ? photo.file_url : `${API_URL}${photo.file_url}`;
-              return `<div class="gallery-grid__item" style="border-radius: 12px; overflow: hidden; background: #f1f5f9; height: 100px;">
-                        <img src="${imgUrl}" alt="Фото" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" onclick="window.open('${imgUrl}', '_blank')">
-                      </div>`;
-            }).join('')
-          : `<p style="color: #94a3b8; font-style: italic; font-size: 0.9rem;">Фотографии не прикреплены</p>`;
+      // Функция инициализации отправки формы
+      function initFormSubmit() {
+          const appealForm = document.querySelector('.appeal-form');
+          if (!appealForm) return;
+
+          appealForm.addEventListener('submit', async function(event) {
+              event.preventDefault();
+
+              // Собираем данные
+              const categoryText = document.getElementById('appeal-category').value;
+              const title = document.getElementById('appeal-title').value.trim();
+              const description = document.getElementById('appeal-description').value.trim();
+              const address = document.getElementById('appeal-address').value.trim();
+              const truthConfirmed = document.querySelector('input[name="truth_confirmed"]').checked;
+              const photosInput = document.getElementById('appeal-photos');
+              const photos = photosInput.files;
+
+              // Валидация
+              if (!categoryText) {
+                  alert('Выберите категорию');
+                  return;
+              }
+              if (!title || title.length < 10) {
+                  alert('Заголовок от 10 до 100 символов');
+                  return;
+              }
+              if (!description || description.length < 50) {
+                  alert('Описание от 50 до 1000 символов');
+                  return;
+              }
+              if (!address) {
+                  alert('Укажите адрес');
+                  return;
+              }
+              if (!truthConfirmed) {
+                  alert('Подтвердите достоверность');
+                  return;
+              }
+              if (photos.length > 3) {
+                  alert('Не более 3 фото');
+                  return;
+              }
+
+              // Получаем ID категории
+              const categoryId = await getCategoryId(categoryText);
+              if (!categoryId) {
+                  alert('Ошибка: категория не найдена');
+                  return;
+              }
+
+              // Создаем FormData
+              const formData = new FormData();
+              formData.append('title', title);
+              formData.append('description', description);
+              formData.append('category_id', categoryId);
+              formData.append('address', address);
+
+              if (marker) {
+                  const pos = marker.getLatLng();
+                  formData.append('latitude', pos.lat);
+                  formData.append('longitude', pos.lng);
+              }
+
+              for (let i = 0; i < photos.length; i++) {
+                  formData.append('photos', photos[i]);
+              }
+
+              // Отправляем
+              const token = localStorage.getItem('accessToken');
+              if (!token) {
+                  window.location.href = 'auth.html';
+                  return;
+              }
+
+              const submitButton = appealForm.querySelector('button[type="submit"]');
+              const originalText = submitButton.textContent;
+              submitButton.textContent = 'Отправка...';
+              submitButton.disabled = true;
+
+              try {
+                  const response = await fetch(`${API_URL}/requests/`, {
+                      method: 'POST',
+                      headers: {
+                          'Authorization': `Bearer ${token}`
+                      },
+                      body: formData
+                  });
+
+                  if (response.ok) {
+                      const result = await response.json();
+                      document.getElementById('appeal-success-title').textContent = `Обращение №${result.id} отправлено!`;
+                      window.location.hash = 'appeal-success';
+
+                      // Очищаем форму
+                      appealForm.reset();
+                      const slots = [document.getElementById('slot-1'), document.getElementById('slot-2'), document.getElementById('slot-3')];
+                      slots.forEach((slot, idx) => {
+                          slot.style.backgroundImage = 'none';
+                          slot.textContent = `фото ${idx + 1}`;
+                      });
+                      if (marker) {
+                          map.removeLayer(marker);
+                          marker = null;
+                      }
+
+                      await loadAppealsData(token);
+
+                      setTimeout(() => {
+                          document.getElementById('dashboard-view-history').checked = true;
+                      }, 2000);
+                  } else {
+                      const error = await response.json();
+                      alert(`Ошибка: ${error.detail || 'Не удалось отправить'}`);
+                  }
+              } catch (err) {
+                  console.error('Ошибка:', err);
+                  alert('Ошибка соединения с сервером');
+              } finally {
+                  submitButton.textContent = originalText;
+                  submitButton.disabled = false;
+              }
+          });
       }
 
-      // Загрузка сообщений (ответов)
-      const responseContainer = document.getElementById('modal-response-container');
-      responseContainer.innerHTML = '<p style="font-style: italic; color: #64748b;">Загрузка ответа...</p>';
+      async function getCategoryId(categoryName) {
+          const token = localStorage.getItem('accessToken');
+          if (!token) return null;
 
-      try {
-        const res = await fetch(`${API_URL}/requests/${appeal.id}/messages`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+          try {
+              const response = await fetch(`${API_URL}/requests/categories`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
 
-        if (res.ok) {
-          const messages = await res.json();
-          const officialMessage = messages[0];
+              if (response.ok) {
+                  const categories = await response.json();
+                  const found = categories.find(c => c.name === categoryName);
+                  return found ? found.id : null;
+              }
+          } catch (err) {
+              console.error('Ошибка получения категорий:', err);
+          }
+          return null;
+      }
 
-          if (officialMessage) {
-            const author = officialMessage.user ? `${officialMessage.user.first_name} ${officialMessage.user.last_name}` : "Администрация";
-            responseContainer.innerHTML = `
-              <div class="section-card" style="border: 2px solid #3b82f61a; background: #fff; border-radius: 16px; padding: 20px;">
-                <h3 style="color: #3b82f6; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; margin-bottom: 12px;">Ответ депутата</h3>
-                <p style="line-height: 1.5; color: #1e293b;">${officialMessage.text}</p>
-                <p style="color: #64748b; font-size: 0.8rem; margin-top: 12px;">${new Date(officialMessage.created_at).toLocaleDateString('ru-RU')} · ${author.toUpperCase()}</p>
-              </div>`;
+      // Функции карты
+      function initLeafletMap() {
+          if (map) return;
+          const kaluga = [54.5138, 36.2612];
+          map = L.map('map').setView(kaluga, 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+          map.on('click', function(e) {
+              placeMarker(e.latlng.lat, e.latlng.lng);
+          });
+      }
+
+      function placeMarker(lat, lng) {
+          if (marker) {
+              marker.setLatLng([lat, lng]);
           } else {
-            responseContainer.innerHTML = `<div style="padding: 20px; border: 1px dashed #cbd5e1; border-radius: 16px;"><p style="color: #64748b; font-style: italic; font-size: 0.9rem; margin: 0;">Ответ еще подготавливается.</p></div>`;
+              marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+              marker.on('dragend', function() {
+                  const pos = marker.getLatLng();
+                  reverseGeocode(pos.lat, pos.lng);
+              });
           }
-        }
-      } catch (err) {
-        responseContainer.innerHTML = '<p style="color: red;">Ошибка связи с сервером.</p>';
+          reverseGeocode(lat, lng);
       }
 
-      window.location.hash = 'appeal-details-modal';
-    }
+      async function reverseGeocode(lat, lng) {
+          const addressInput = document.getElementById('appeal-address');
+          try {
+              const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ru`);
+              const data = await response.json();
+              if (data && data.display_name) {
+                  addressInput.value = data.display_name;
+              }
+          } catch (err) {
+              console.error("Ошибка геокодинга:", err);
+          }
+      }
 
-    // Логика валидации и превью фотографий
-    document.addEventListener('DOMContentLoaded', () => {
-        const photoInput = document.getElementById('appeal-photos');
-        if (photoInput) {
-            photoInput.addEventListener('change', function() {
-                const files = Array.from(this.files);
-                const photoError = document.getElementById('photo-error');
-                const slots = [
-                    document.getElementById('slot-1'),
-                    document.getElementById('slot-2'),
-                    document.getElementById('slot-3')
-                ];
-
-                // Сброс ошибок и текущих превью
-                photoError.style.display = 'none';
-                photoError.textContent = '';
-                slots.forEach((slot, index) => {
-                    slot.style.backgroundImage = 'none';
-                    slot.textContent = `фото ${index + 1}`;
-                    slot.style.borderStyle = 'dashed';
-                });
-
-                // 1. Проверка на количество (макс 3)
-                if (files.length > 3) {
-                    photoError.textContent = 'Можно приложить не более 3-х фотографий.';
-                    photoError.style.display = 'block';
-                    this.value = ''; // Очищаем поле
-                    return;
-                }
-
-                // 2. Проверка размера и отрисовка превью
-                files.forEach((file, index) => {
-                    if (file.size > 5 * 1024 * 1024) {
-                        photoError.textContent = `Файл "${file.name}" слишком большой (макс. 5 МБ).`;
-                        photoError.style.display = 'block';
-                        this.value = '';
-                        return;
-                    }
-
-                    if (index < 3) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            slots[index].style.backgroundImage = `url(${e.target.result})`;
-                            slots[index].textContent = ''; 
-                            slots[index].style.borderStyle = 'solid';
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            });
-        }
-    });
-
-    let dgMap;
-    let dgMarker;
-
-    function init2GIS() {
-        if (dgMap) return; // Чтобы не создавать карту повторно
-
-        DG.then(function () {
-            // Создаем карту с центром в Калуге
-            dgMap = DG.map('map', {
-                center: [54.5138, 36.2612],
-                zoom: 13,
-                geocontrol: true,
-                cities: ['kaluga']
-            });
-
-            // Обработка клика по карте
-            dgMap.on('click', function (e) {
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
-                update2GISMarker(lat, lng);
-            });
-        });
-    }
-
-    function update2GISMarker(lat, lng) {
-        if (dgMarker) {
-            dgMarker.setLatLng([lat, lng]);
-        } else {
-            // Создаем маркер и сразу разрешаем ему иметь всплывающее окно
-            dgMarker = DG.marker([lat, lng], { draggable: true }).addTo(dgMap);
-            
-            // Чтобы окно открывалось и при клике на сам маркер
-            dgMarker.on('click', function() {
-                const pos = dgMarker.getLatLng();
-                get2GISAddress(pos.lat, pos.lng);
-            });
-
-            dgMarker.on('dragend', function () {
-                const pos = dgMarker.getLatLng();
-                get2GISAddress(pos.lat, pos.lng);
-            });
-        }
-        get2GISAddress(lat, lng);
-    }
-
-    function get2GISAddress(lat, lng) {
-        const addressInput = document.getElementById('appeal-address');
-        
-        // Временно пишем статус в инпут, чтобы понять, что запрос ушел
-        if (addressInput) addressInput.value = "Загрузка...";
-
-        DG.ajax({
-            url: 'https://catalog.api.2gis.ru/3.0/items/geocode',
-            params: {
-                lat: lat,
-                lon: lng,
-                fields: 'items.address',
-                key: 'd6215e1f-4b56-4951-bea4-42103a109e9e' // ПРОВЕРЬТЕ: Ключ должен быть активен
-            },
-            success: function (data) {
-                if (data.result && data.result.items.length > 0) {
-                    const address = data.result.items[0].address_name || data.result.items[0].full_name;
-                    
-                    addressInput.value = address;
-                    
-                    // Исправленный вызов балуна
-                    dgMarker.setPopupContent(address).openPopup();
-                    
-                    addressInput.dispatchEvent(new Event('input'));
-                } else {
-                    if (addressInput) addressInput.value = "Адрес не найден в этой точке";
-                }
-            },
-            error: function (err) {
-                console.error("Ошибка 2ГИС:", err);
-                if (addressInput) addressInput.value = "Ошибка сервера карт";
-            }
-        });
-    }
-
-    // Привязка к вашим вкладкам
-    document.querySelectorAll('input[name="address-mode"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.id === 'address-mode-map') {
-                setTimeout(() => {
-                    init2GIS();
-                    if (dgMap) dgMap.invalidateSize();
-                }, 300);
-            }
-        });
-    });
-
-    function initDaData() {
-      const addressInput = document.getElementById('appeal-address');
-      const suggestionsContainer = document.getElementById('appeal-address-suggestions');
-
-      if (!addressInput || !suggestionsContainer) return;
-
-      addressInput.addEventListener('input', async function() {
-        const query = this.value.trim();
-        suggestionsContainer.innerHTML = ''; 
-        if (query.length < 3) return;
-
-        try {
-          const response = await fetch("https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-              "Authorization": "Token " + DADATA_TOKEN
-            },
-            body: JSON.stringify({ query: query, count: 3 })
+      // Инициализация карты
+      document.querySelectorAll('input[name="address-mode"]').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+              if (e.target.id === 'address-mode-map') {
+                  setTimeout(() => {
+                      initLeafletMap();
+                      if (map) map.invalidateSize();
+                  }, 200);
+              }
           });
-          const result = await response.json();
-          
-          result.suggestions.forEach(suggestion => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'suggestion-badge';
-            btn.textContent = suggestion.value;
-            btn.onclick = () => {
-              addressInput.value = suggestion.value;
+      });
+
+      // DaData
+      function initDaData() {
+          const addressInput = document.getElementById('appeal-address');
+          const suggestionsContainer = document.getElementById('appeal-address-suggestions');
+          if (!addressInput || !suggestionsContainer) return;
+
+          addressInput.addEventListener('input', async function() {
+              const query = this.value.trim();
               suggestionsContainer.innerHTML = '';
-            };
-            suggestionsContainer.appendChild(btn);
+              if (query.length < 3) return;
+
+              try {
+                  const response = await fetch("https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address", {
+                      method: "POST",
+                      headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": "Token " + DADATA_TOKEN
+                      },
+                      body: JSON.stringify({ query: query, count: 3 })
+                  });
+                  const result = await response.json();
+
+                  result.suggestions.forEach(suggestion => {
+                      const btn = document.createElement('button');
+                      btn.type = 'button';
+                      btn.className = 'suggestion-badge';
+                      btn.textContent = suggestion.value;
+                      btn.onclick = () => {
+                          addressInput.value = suggestion.value;
+                          suggestionsContainer.innerHTML = '';
+                      };
+                      suggestionsContainer.appendChild(btn);
+                  });
+              } catch (error) {
+                  console.error("DaData error:", error);
+              }
           });
-        } catch (error) {
-          console.error("DaData error:", error);
-        }
+
+          document.addEventListener('click', (e) => {
+              if (!addressInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                  suggestionsContainer.innerHTML = '';
+              }
+          });
+      }
+
+      // Превью фото
+      document.addEventListener('DOMContentLoaded', () => {
+          const photoInput = document.getElementById('appeal-photos');
+          if (photoInput) {
+              photoInput.addEventListener('change', function() {
+                  const files = Array.from(this.files);
+                  const photoError = document.getElementById('photo-error');
+                  const slots = [document.getElementById('slot-1'), document.getElementById('slot-2'), document.getElementById('slot-3')];
+
+                  photoError.style.display = 'none';
+                  slots.forEach((slot, index) => {
+                      slot.style.backgroundImage = 'none';
+                      slot.textContent = `фото ${index + 1}`;
+                      slot.style.borderStyle = 'dashed';
+                  });
+
+                  if (files.length > 3) {
+                      photoError.textContent = 'Можно приложить не более 3-х фотографий.';
+                      photoError.style.display = 'block';
+                      this.value = '';
+                      return;
+                  }
+
+                  files.forEach((file, index) => {
+                      if (file.size > 5 * 1024 * 1024) {
+                          photoError.textContent = `Файл "${file.name}" слишком большой (макс. 5 МБ).`;
+                          photoError.style.display = 'block';
+                          this.value = '';
+                          return;
+                      }
+
+                      if (index < 3) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                              slots[index].style.backgroundImage = `url(${e.target.result})`;
+                              slots[index].textContent = '';
+                              slots[index].style.borderStyle = 'solid';
+                          };
+                          reader.readAsDataURL(file);
+                      }
+                  });
+              });
+          }
       });
 
-      document.addEventListener('click', (e) => {
-        if (!addressInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
-          suggestionsContainer.innerHTML = '';
-        }
-      });
-    }
-
-    function logout() {
-      localStorage.removeItem('accessToken');
-      window.location.href = 'auth.html';
-    }
+      function logout() {
+          localStorage.removeItem('accessToken');
+          window.location.href = 'auth.html';
+      }
   </script>
 </body>
 </html>

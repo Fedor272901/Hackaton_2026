@@ -1,12 +1,29 @@
 # app/api/v1/endpoints/requests.py
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Path,
+    File,
+    UploadFile,
+    Form,
+)
 from sqlalchemy.orm import Session
 from typing import Optional, List
+import os
+import shutil
+from datetime import datetime
+import uuid
 
 from app.core.config import SECRET_KEY, ALGORITHM
+from geoalchemy2.shape import from_shape
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+from shapely.geometry import Point
 from app.db.database import get_db
-from app.db.models import User, Request, Deputy
+from app.db.models import User, Request, Deputy, District
 from app.core.roles import Role
 from app.schemas.requests import (
     RequestCreate,
@@ -18,28 +35,44 @@ from app.schemas.requests import (
     MessageCreate,
     MessageResponse,
     StatusHistoryResponse,
-    StatisticsResponse
+    StatisticsResponse,
 )
 from app.crud import request as request_crud
 from app.core.dependencies import get_current_active_user
-# ИСПОЛЬЗУЕМ ГОТОВЫЕ ПРОВЕРКИ ИЗ permissions.py
 from app.core.permissions import require_admin, require_admin_or_deputy
 from app.core.access import can_view_request
-
-# ЗАЩИТА ОТ СПАМА
 from app.core.rate_limit import rate_limiter
 from app.core.spam_filter import spam_filter
-
-
 
 router = APIRouter()
 
 
 def get_request_or_404(db: Session, request_id: int) -> Request:
-      request = request_crud.get_request_by_id(db, request_id)
-      if not request:
-          raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
-      return request
+    request = request_crud.get_request_by_id(db, request_id)
+    if not request:
+        raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
+    return request
+
+
+def save_upload_file(upload_file: UploadFile, user_id: int) -> str:
+    """Сохраняет загруженный файл и возвращает путь к нему"""
+    # Создаем директорию для загрузок, если её нет
+    upload_dir = "uploads/requests"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Генерируем уникальное имя файла
+    file_ext = os.path.splitext(upload_file.filename)[1]
+    unique_filename = (
+        f"{uuid.uuid4().hex}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{file_ext}"
+    )
+    file_path = os.path.join(upload_dir, unique_filename)
+
+    # Сохраняем файл
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(upload_file.file, buffer)
+
+    return f"/{file_path}"  # Возвращаем путь для доступа через веб
+
 
 # ---------------------------
 # Справочные эндпоинты (всем авторизованным)
@@ -51,50 +84,92 @@ def get_statuses(db: Session = Depends(get_db)):
 
 
 @router.get("/categories", response_model=List[RequestCategoryResponse])
-def get_categories(db: Session = Depends(get_db)):
+def get_requests_categories(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
+):
     """Получить список всех категорий обращений"""
     return request_crud.get_request_categories(db)
 
 
-# ---------------------------
-# Основные эндпоинты обращений
-# ---------------------------
 @router.post("/", response_model=RequestResponse, status_code=201)
-def create_request(
-    request_data: RequestCreate,
+async def create_request(
+    title: str = Form(...),
+    description: str = Form(...),
+    category_id: int = Form(...),
+    address: str = Form(...),
+    latitude: Optional[float] = Form(None),
+    longitude: Optional[float] = Form(None),
+    photos: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
-    """
-    Создать новое обращение
-
-    Доступно для всех авторизованных пользователей.
-    """
-    # ЗАЩИТА 1: Rate Limit (5 обращений в час)
+    # Защиты (rate limit, спам, дубликаты)
     if not rate_limiter.check(current_user.id):
-        raise HTTPException(
-            status_code=429,
-            detail="Лимит исчерпан: максимум 5 обращений в сутки"
-        )
+        raise HTTPException(429, "Лимит исчерпан: максимум 5 обращений в сутки")
 
-    # ЗАЩИТА 2: Спам-фильтр
-    full_text = f"{request_data.title} {request_data.description}"
+    full_text = f"{title} {description}"
     is_spam, reason = spam_filter.check(full_text)
     if is_spam:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Обращение отклонено: {reason}"
-        )
+        raise HTTPException(400, f"Обращение отклонено: {reason}")
 
-    # ЗАЩИТА 3: Проверка дубликатов
-    if request_crud.check_duplicate_request(db, current_user.id, request_data.title):
-        raise HTTPException(
-            status_code=400,
-            detail="Похожее обращение уже было отправлено недавно"
-        )
+    if request_crud.check_duplicate_request(db, current_user.id, title):
+        raise HTTPException(400, "Похожее обращение уже было отправлено недавно")
+
+    # Проверка фото
+    if len(photos) > 3:
+        raise HTTPException(400, "Можно загрузить не более 3 фотографий")
+
+    # Сохраняем фото
+    photo_paths = []
+    for photo in photos:
+        if photo.size > 5 * 1024 * 1024:
+            raise HTTPException(400, f"Файл {photo.filename} превышает 5 МБ")
+        if photo.content_type not in [
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/webp",
+        ]:
+            raise HTTPException(400, f"Файл {photo.filename} должен быть изображением")
+        file_path = save_upload_file(photo, current_user.id)
+        photo_paths.append(file_path)
+
+    # Определяем district_id
+    district_id = None
+
+    if latitude is not None and longitude is not None:
+        try:
+            point = from_shape(Point(longitude, latitude), srid=4326)
+            district = (
+                db.query(District)
+                .filter(func.ST_Contains(District.geom, point))
+                .first()
+            )
+            if district:
+                district_id = district.id
+        except Exception as e:
+            print(f"Ошибка поиска района: {e}")
+
+    # Если район не найден, берем первый существующий
+    if district_id is None:
+        first_district = db.query(District).first()
+        if first_district:
+            district_id = first_district.id
+
+    # Создаем объект RequestCreate
+    request_data = RequestCreate(
+        title=title,
+        description=description,
+        category_id=category_id,
+        address=address,
+        district_id=district_id,
+        latitude=latitude,
+        longitude=longitude,
+    )
 
     try:
-        return request_crud.create_request(db, request_data, current_user.id)
+        new_request = request_crud.create_request(db, request_data, current_user.id)
+        return new_request
     except Exception as e:
         raise HTTPException(400, f"Ошибка при создании обращения: {str(e)}")
 
@@ -109,29 +184,20 @@ def get_requests_list(
     my_requests: bool = False,
     include_closed: bool = True,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
-    """
-    Получить список обращений с фильтрацией и пагинацией
-
-    Права доступа:
-    - Гражданин: только свои
-    - Депутат: только своего района
-    - Админ: все
-    """
-
-
+    """Получить список обращений с фильтрацией и пагинацией"""
 
     # ФИЛЬТРАЦИЯ ПО РОЛИ
     if current_user.role == Role.CITIZEN:
-        my_requests = True  # гражданин видит только свои
+        my_requests = True
 
     user_id = current_user.id if my_requests else None
 
     if current_user.role == Role.DEPUTY and not my_requests:
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
         if deputy:
-            district_id = deputy.district_id  # депутат видит только свой район
+            district_id = deputy.district_id
 
     return request_crud.get_requests(
         db=db,
@@ -141,7 +207,7 @@ def get_requests_list(
         district_id=district_id,
         category_id=category_id,
         status_id=status_id,
-        include_closed=include_closed
+        include_closed=include_closed,
     )
 
 
@@ -151,7 +217,7 @@ def get_my_requests(
     limit: int = Query(20, ge=1, le=100),
     include_closed: bool = Query(True),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Получить список обращений текущего пользователя"""
     result = request_crud.get_requests(
@@ -159,7 +225,7 @@ def get_my_requests(
         skip=skip,
         limit=limit,
         user_id=current_user.id,
-        include_closed=include_closed
+        include_closed=include_closed,
     )
     return result["items"]
 
@@ -168,21 +234,11 @@ def get_my_requests(
 def get_request_details(
     request_id: int = Path(..., ge=1),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
-    """
-    Получить детальную информацию об обращении по ID
-
-    Права доступа:
-    - Гражданин: только свои
-    - Депутат: только своего района
-    - Админ: все
-    """
-
-
+    """Получить детальную информацию об обращении по ID"""
     request = get_request_or_404(db, request_id)
 
-    # ИСПОЛЬЗУЕМ ГОТОВУЮ ПРОВЕРКУ ИЗ permissions.py
     if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "У вас нет прав для просмотра этого обращения")
 
@@ -194,20 +250,12 @@ def update_request(
     request_id: int,
     request_update: RequestUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
-    """
-    Обновить обращение
-
-    Права доступа:
-    - Гражданин: только свои + только "новые" + нельзя менять статус
-    - Депутат: только своего района
-    - Админ: все
-    """
-
+    """Обновить обращение"""
     request = get_request_or_404(db, request_id)
 
-    if not can_view_request(current_user, request, db):
+    if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "Нет прав на редактирование")
 
     try:
@@ -223,14 +271,9 @@ def assign_deputy_to_request(
     request_id: int,
     deputy_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)  # ТОЛЬКО АДМИН
+    current_user: User = Depends(require_admin),
 ):
-    """
-    Назначить депутата на обращение
-
-    Доступно только для администраторов.
-    """
-
+    """Назначить депутата на обращение"""
     request = get_request_or_404(db, request_id)
 
     try:
@@ -243,13 +286,9 @@ def assign_deputy_to_request(
 def delete_request(
     request_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)  # ТОЛЬКО АДМИН
+    current_user: User = Depends(require_admin),
 ):
-    """
-    Удалить обращение
-
-    Доступно только для администраторов.
-    """
+    """Удалить обращение"""
     if not request_crud.delete_request(db, request_id):
         raise HTTPException(404, f"Обращение с ID {request_id} не найдено")
 
@@ -263,13 +302,11 @@ def get_request_messages(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Получить сообщения по обращению"""
-
     request = get_request_or_404(db, request_id)
 
-    # ГОТОВАЯ ПРОВЕРКА
     if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "У вас нет прав для просмотра сообщений")
 
@@ -282,13 +319,11 @@ def add_message_to_request(
     request_id: int,
     message_data: MessageCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Добавить сообщение к обращению"""
-
     request = get_request_or_404(db, request_id)
 
-    # ГОТОВАЯ ПРОВЕРКА
     if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "Вы не можете комментировать это обращение")
 
@@ -304,13 +339,11 @@ def add_message_to_request(
 def get_request_status_history(
     request_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Получить историю изменения статусов обращения"""
-    
     request = get_request_or_404(db, request_id)
 
-    # ГОТОВАЯ ПРОВЕРКА
     if not can_view_request(current_user, request.user_id, request.district_id, db):
         raise HTTPException(403, "У вас нет прав для просмотра истории")
 
@@ -324,14 +357,9 @@ def get_request_status_history(
 def get_requests_statistics(
     district_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin_or_deputy)  # АДМИН ИЛИ ДЕПУТАТ
+    current_user: User = Depends(require_admin_or_deputy),
 ):
-    """
-    Получить статистику по обращениям
-
-    Доступно для администраторов и депутатов.
-    Депутаты видят статистику только по своему району.
-    """
+    """Получить статистику по обращениям"""
     if current_user.role == Role.DEPUTY:
         deputy = db.query(Deputy).filter(Deputy.user_id == current_user.id).first()
         if not deputy:

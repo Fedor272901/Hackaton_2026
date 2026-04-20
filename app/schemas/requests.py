@@ -13,7 +13,7 @@ class UserBriefResponse(BaseModel):
     last_name: str
     email: str
     role: str
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -22,7 +22,7 @@ class DistrictBriefResponse(BaseModel):
     id: int
     name: str
     description: Optional[str] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -31,7 +31,7 @@ class RequestCategoryResponse(BaseModel):
     id: int
     name: str
     description: Optional[str] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -40,7 +40,7 @@ class RequestStatusResponse(BaseModel):
     id: int
     code: str
     name: str
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -49,7 +49,7 @@ class DeputyBriefResponse(BaseModel):
     id: int
     user: Optional[UserBriefResponse] = None
     appointed_at: Optional[datetime] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -58,7 +58,7 @@ class RequestPhotoResponse(BaseModel):
     id: int
     file_url: str
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -67,56 +67,36 @@ class RequestPhotoResponse(BaseModel):
 # ---------------------------
 class RequestCreate(BaseModel):
     """Схема для создания нового обращения"""
+
     title: str = Field(
-        ..., 
-        min_length=5, 
-        max_length=200, 
-        description="Заголовок обращения"
+        ..., min_length=5, max_length=200, description="Заголовок обращения"
     )
     description: str = Field(
-        ..., 
-        min_length=20, 
-        max_length=5000,
-        description="Подробное описание проблемы"
+        ..., min_length=20, max_length=5000, description="Подробное описание проблемы"
     )
-    district_id: int = Field(
-        ..., 
-        gt=0,
-        description="ID района, к которому относится обращение"
+    district_id: Optional[int] = Field(
+        None, gt=0, description="ID района, к которому относится обращение"
     )
-    category_id: int = Field(
-        ..., 
-        gt=0,
-        description="ID категории обращения"
-    )
+    category_id: int = Field(..., gt=0, description="ID категории обращения")
     address: Optional[str] = Field(
-        None, 
-        max_length=500,
-        description="Физический адрес (улица, дом)"
+        None, max_length=500, description="Физический адрес (улица, дом)"
     )
     latitude: Optional[float] = Field(
-        None, 
-        ge=-90, 
-        le=90, 
-        description="Географическая широта"
+        None, ge=-90, le=90, description="Географическая широта"
     )
     longitude: Optional[float] = Field(
-        None, 
-        ge=-180, 
-        le=180, 
-        description="Географическая долгота"
+        None, ge=-180, le=180, description="Географическая долгота"
     )
     photo_urls: Optional[List[str]] = Field(
-        None, 
-        description="Список URL загруженных фотографий"
+        None, description="Список URL загруженных фотографий"
     )
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "title": "Яма на дороге по улице Ленина",
                 "description": "Глубокая яма на проезжей части, повреждено дорожное покрытие. "
-                               "Создает аварийную ситуацию, водители вынуждены выезжать на встречную полосу.",
+                "Создает аварийную ситуацию, водители вынуждены выезжать на встречную полосу.",
                 "district_id": 1,
                 "category_id": 3,
                 "address": "ул. Ленина, д. 15",
@@ -124,8 +104,8 @@ class RequestCreate(BaseModel):
                 "longitude": 37.6173,
                 "photo_urls": [
                     "https://storage.example.com/photos/request_123_1.jpg",
-                    "https://storage.example.com/photos/request_123_2.jpg"
-                ]
+                    "https://storage.example.com/photos/request_123_2.jpg",
+                ],
             }
         }
     )
@@ -134,45 +114,45 @@ class RequestCreate(BaseModel):
 class RequestUpdate(BaseModel):
     """Схема для обновления существующего обращения"""
     title: Optional[str] = Field(
-        None, 
-        min_length=5, 
+        None,
+        min_length=5,
         max_length=200,
         description="Новый заголовок обращения"
     )
     description: Optional[str] = Field(
-        None, 
+        None,
         min_length=20,
         max_length=5000,
         description="Новое описание проблемы"
     )
     category_id: Optional[int] = Field(
-        None, 
+        None,
         gt=0,
         description="Новая категория обращения"
     )
     status_id: Optional[int] = Field(
-        None, 
+        None,
         gt=0,
         description="Новый статус обращения"
     )
     address: Optional[str] = Field(
-        None, 
+        None,
         max_length=500,
         description="Обновленный адрес"
     )
     latitude: Optional[float] = Field(
-        None, 
-        ge=-90, 
+        None,
+        ge=-90,
         le=90,
         description="Обновленная широта"
     )
     longitude: Optional[float] = Field(
-        None, 
-        ge=-180, 
+        None,
+        ge=-180,
         le=180,
         description="Обновленная долгота"
     )
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -197,7 +177,7 @@ class RequestResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     closed_at: Optional[datetime] = None
-    
+
     # Связанные объекты
     user: Optional[UserBriefResponse] = None
     district: Optional[DistrictBriefResponse] = None
@@ -205,7 +185,7 @@ class RequestResponse(BaseModel):
     status: Optional[RequestStatusResponse] = None
     assigned_deputy: Optional[DeputyBriefResponse] = None
     photos: List[RequestPhotoResponse] = []
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -215,7 +195,7 @@ class RequestListResponse(BaseModel):
     total: int = Field(..., description="Общее количество обращений")
     skip: int = Field(..., description="Сколько записей пропущено")
     limit: int = Field(..., description="Максимальное количество записей на странице")
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -234,12 +214,12 @@ class RequestListResponse(BaseModel):
 class MessageCreate(BaseModel):
     """Схема для создания нового сообщения"""
     text: str = Field(
-        ..., 
-        min_length=1, 
+        ...,
+        min_length=1,
         max_length=2000,
         description="Текст сообщения"
     )
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -257,7 +237,7 @@ class MessageResponse(BaseModel):
     text: str
     is_system: bool = Field(False, description="Является ли сообщение системным")
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -272,7 +252,7 @@ class StatusHistoryResponse(BaseModel):
     new_status: Optional[RequestStatusResponse] = None
     changed_by_user: Optional[UserBriefResponse] = None
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -296,22 +276,22 @@ class StatisticsResponse(BaseModel):
     """Статистика по обращениям"""
     total_requests: int = Field(..., description="Общее количество обращений")
     by_status: dict[str, StatusStats] = Field(
-        ..., 
+        ...,
         description="Статистика по статусам (ключ - код статуса)"
     )
     by_category: dict[str, CategoryStats] = Field(
-        ..., 
+        ...,
         description="Статистика по категориям (ключ - название категории)"
     )
     average_resolution_days: float = Field(
-        ..., 
+        ...,
         description="Среднее время решения в днях"
     )
     district_id: Optional[int] = Field(
-        None, 
+        None,
         description="ID района, если статистика отфильтрована"
     )
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -339,7 +319,7 @@ class StatisticsResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """Стандартный ответ с ошибкой"""
     detail: str = Field(..., description="Описание ошибки")
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
