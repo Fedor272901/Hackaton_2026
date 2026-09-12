@@ -1,5 +1,9 @@
 # 🚀 Hackathon 2026
 
+## 📚 Документация
+
+- Архитектура backend: docs/backend-architecture.md
+
 ## 🌿 Git ветки
 
 - main — стабильная версия
@@ -175,3 +179,5 @@ pip install -r requirements.txt
    git add requirements.txt
    git commit -m "обновление библиотек"
    git push
+
+

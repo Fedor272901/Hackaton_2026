@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Детали обращения гражданина — управление статусом и ответ депутата.">
+  <title>Портал обращений депутатам — Обращение #12345</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="dashboard-page">
+  <!-- CSS-only переключение вкладок управления обращением -->
+  <input class="state-toggle" type="radio" name="appeal-action" id="appeal-action-details" checked>
+  <input class="state-toggle" type="radio" name="appeal-action" id="appeal-action-status">
+  <input class="state-toggle" type="radio" name="appeal-action" id="appeal-action-response">
+
+  <div class="dashboard-shell deputy-dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-header__brand">
+        <div class="dashboard-header__logo" aria-hidden="true">📍</div>
+        <div>
+          <p class="dashboard-header__eyebrow">Портал обращений</p>
+          <p class="dashboard-header__title">Кабинет депутата</p>
+        </div>
+      </div>
+
+      <nav class="dashboard-nav" aria-label="Навигация по обращению">
+        <label class="dashboard-nav__link" for="appeal-action-details">Детали</label>
+        <label class="dashboard-nav__link" for="appeal-action-status">Статус</label>
+        <label class="dashboard-nav__link" for="appeal-action-response">Ответ</label>
+      </nav>
+
+      <div class="dashboard-header__profile">
+        <div class="dashboard-header__user">
+          <div class="dashboard-header__avatar" aria-hidden="true">ИО</div>
+          <div>
+            <p class="dashboard-header__name">ИМЯ ОТЧЕСТВО</p>
+            <p class="dashboard-header__role">Депутат</p>
+          </div>
+        </div>
+        <a class="button button--secondary button--compact" href="dashboard.html">Назад</a>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <section class="dashboard-view dashboard-view--details" id="details-panel" aria-labelledby="details-title">
+        <div class="dashboard-hero">
+          <div>
+            <p class="section-card__eyebrow">Обращение #12345</p>
+            <h1 class="dashboard-hero__title" id="details-title">Разбитая дорога на улице</h1>
+            <p class="dashboard-hero__text">Дороги и тротуары · 01.01.2025 · ул. Примерная, д. 1</p>
+          </div>
+          <span class="appeal-card__status appeal-card__status--progress">В работе</span>
+        </div>
+
+        <div class="detail-layout">
+          <div class="detail-main">
+            <article class="detail-card">
+              <p class="submission-card__eyebrow">Информация об обращении</p>
+              <dl class="detail-list">
+                <div class="detail-list__item">
+                  <dt class="detail-list__label">Категория</dt>
+                  <dd class="detail-list__value">Дороги и тротуары</dd>
+                </div>
+                <div class="detail-list__item">
+                  <dt class="detail-list__label">Описание проблемы</dt>
+                  <dd class="detail-list__value detail-list__value--text">ТЕСТОВОЕ ОПИСАНИЕ ПРОБЛЕМЫ</dd>
+                </div>
+                <div class="detail-list__item">
+                  <dt class="detail-list__label">Адрес</dt>
+                  <dd class="detail-list__value">ул. Примерная, д. 1</dd>
+                </div>
+              </dl>
+            </article>
+
+            <article class="detail-card">
+              <p class="submission-card__eyebrow">Прикреплённые фото</p>
+              <div class="gallery-grid">
+                <div class="gallery-grid__item" role="img" aria-label="Фото 1"></div>
+                <div class="gallery-grid__item" role="img" aria-label="Фото 2"></div>
+                <div class="gallery-grid__item" role="img" aria-label="Фото 3"></div>
+              </div>
+            </article>
+
+            <article class="detail-card">
+              <p class="submission-card__eyebrow">Автор обращения</p>
+              <div class="author-card">
+                <div class="dashboard-header__avatar" aria-hidden="true">ИФ</div>
+                <div>
+                  <p class="author-card__name">ИМЯ ФАМИЛИЯ</p>
+                  <p class="author-card__email">citizen@example.ru</p>
+                </div>
+              </div>
+            </article>
+
+            <article class="detail-card">
+              <p class="submission-card__eyebrow">История изменений</p>
+              <ol class="timeline-list">
+                <li class="timeline-list__item">
+                  <span class="timeline-list__date">01.01.2025 10:00</span>
+                  <div>
+                    <p class="timeline-list__title">Обращение создано</p>
+                    <p class="timeline-list__text">Гражданин отправил обращение</p>
+                  </div>
+                </li>
+                <li class="timeline-list__item">
+                  <span class="timeline-list__date">02.01.2025 14:30</span>
+                  <div>
+                    <p class="timeline-list__title">Статус изменён на «В работе»</p>
+                    <p class="timeline-list__text">Принято в работу депутатом</p>
+                  </div>
+                </li>
+              </ol>
+            </article>
+          </div>
+
+          <aside class="detail-sidebar">
+            <article class="detail-card detail-card--highlight">
+              <p class="submission-card__eyebrow">Местоположение</p>
+              <p class="detail-card__address">📍 ул. Примерная, д. 1</p>
+              <div class="map-placeholder map-placeholder--small" role="img" aria-label="Статичная карта с адресом"></div>
+              <a class="text-link text-link--strong" href="https://yandex.ru/maps/" target="_blank" rel="noopener noreferrer">Открыть карту</a>
+            </article>
+
+            <article class="detail-card">
+              <p class="submission-card__eyebrow">Ваш округ</p>
+              <p class="detail-card__district"><strong>№1</strong></p>
+              <p class="detail-card__district-name">Центральный округ</p>
+            </article>
+
+            <article class="detail-card">
+              <p class="submission-card__eyebrow">Действия</p>
+              <div class="quick-links-list">
+                <a class="text-link text-link--strong" href="dashboard.html">← К списку обращений</a>
+                <a class="text-link text-link--strong" href="#print">🖨️ Печать</a>
+                <a class="text-link text-link--strong" href="#export">📥 Экспорт PDF</a>
+              </div>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section class="dashboard-view dashboard-view--status" id="status-panel" aria-labelledby="status-title">
+        <div class="dashboard-hero dashboard-hero--form">
+          <div>
+            <p class="section-card__eyebrow">Управление статусом</p>
+            <h1 class="dashboard-hero__title" id="status-title">Изменение статуса обращения</h1>
+            <p class="dashboard-hero__text">Выберите новый статус и при необходимости добавьте комментарий.</p>
+          </div>
+        </div>
+
+        <form class="status-form" action="#status-success" method="get">
+          <fieldset class="form-section">
+            <legend class="form-section__title">Текущий статус</legend>
+            <div class="status-display">
+              <span class="appeal-card__status appeal-card__status--progress">В работе</span>
+              <p class="status-display__date">Изменён 02.01.2025 в 14:30</p>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__title">Новый статус</legend>
+
+            <div class="form__field">
+              <label class="form__label" for="new-status">Выберите статус</label>
+              <select class="form__control" id="new-status" name="status" required>
+                <option value="">Выберите статус</option>
+                <option value="new">🔵 Новое</option>
+                <option value="review">🟣 На рассмотрении</option>
+                <option value="in_progress" selected>🟠 В работе</option>
+                <option value="done">🟢 Выполнено</option>
+                <option value="rejected">🔴 Отклонено</option>
+              </select>
+              <p class="form__error">Выберите статус обращения.</p>
+            </div>
+
+            <div class="form__field">
+              <label class="form__label" for="status-comment">Комментарий</label>
+              <textarea
+                class="form__control form__control--textarea"
+                id="status-comment"
+                name="comment"
+                placeholder="Причина изменения статуса или дополнительная информация..."
+                rows="4"></textarea>
+              <p class="form__hint">Необязательное поле для внутренней заметки.</p>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__title">Подтверждение</legend>
+
+            <div class="form__field form__field--checkbox">
+              <label class="checkbox">
+                <input class="checkbox__control" type="checkbox" name="confirm" required>
+                <span class="checkbox__box" aria-hidden="true"></span>
+                <span class="checkbox__label">Я подтверждаю изменение статуса обращения</span>
+              </label>
+              <p class="form__error">Нужно подтвердить изменение статуса.</p>
+            </div>
+
+            <div class="form__actions">
+              <button class="button button--primary button--wide" type="submit">Изменить статус</button>
+            </div>
+          </fieldset>
+        </form>
+      </section>
+
+      <section class="dashboard-view dashboard-view--response" id="response-panel" aria-labelledby="response-title">
+        <div class="dashboard-hero dashboard-hero--form">
+          <div>
+            <p class="section-card__eyebrow">Ответ гражданину</p>
+            <h1 class="dashboard-hero__title" id="response-title">Отправка официального ответа</h1>
+            <p class="dashboard-hero__text">Ваш ответ будет отправлен гражданину и сохранён в истории обращения.</p>
+          </div>
+        </div>
+
+        <form class="response-form" action="#response-success" method="get">
+          <fieldset class="form-section">
+            <legend class="form-section__title">Переписка</legend>
+
+            <article class="response-card response-card--history">
+              <p class="response-card__eyebrow">Предыдущие ответы</p>
+              <div class="response-history">
+                <div class="response-history__item">
+                  <p class="response-history__meta">02.01.2025 15:00 · Имя Отчество</p>
+                  <p class="response-history__text">ТЕСТОВЫЙ ОТВЕТ ДЕПУТАТА</p>
+                </div>
+              </div>
+            </article>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__title">Ваш ответ</legend>
+
+            <div class="form__field">
+              <label class="form__label" for="response-text">Текст ответа</label>
+              <textarea
+                class="form__control form__control--textarea"
+                id="response-text"
+                name="text"
+                placeholder="Введите официальный ответ гражданину..."
+                minlength="20"
+                maxlength="2000"
+                required></textarea>
+              <p class="form__hint">От 20 до 2000 символов. Ответ должен быть официальным и информативным.</p>
+              <p class="form__error">Введите ответ длиной от 20 до 2000 символов.</p>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend class="form-section__title">Подтверждение</legend>
+
+            <div class="form__field form__field--checkbox">
+              <label class="checkbox">
+                <input class="checkbox__control" type="checkbox" name="confirm" required>
+                <span class="checkbox__box" aria-hidden="true"></span>
+                <span class="checkbox__label">Я подтверждаю отправку ответа гражданину</span>
+              </label>
+              <p class="form__error">Нужно подтвердить отправку ответа.</p>
+            </div>
+
+            <div class="form__actions">
+              <button class="button button--primary button--wide" type="submit">Отправить ответ</button>
+            </div>
+          </fieldset>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <!-- CSS-only модальное окно успешного изменения статуса -->
+  <section class="modal modal--success" id="status-success" aria-labelledby="status-success-title">
+    <div class="modal__dialog modal__dialog--success">
+      <div class="modal__header">
+        <div>
+          <p class="section-card__eyebrow">Изменение статуса</p>
+          <h2 class="modal__title" id="status-success-title">Статус изменён!</h2>
+        </div>
+        <a class="modal__close" href="#details-panel" aria-label="Закрыть окно успеха">Закрыть</a>
+      </div>
+      <div class="modal__content">
+        <section class="response-card response-card--success">
+          <p class="response-card__text">Статус обращения успешно обновлён. Гражданин получит уведомление.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- CSS-only модальное окно успешной отправки ответа -->
+  <section class="modal modal--success" id="response-success" aria-labelledby="response-success-title">
+    <div class="modal__dialog modal__dialog--success">
+      <div class="modal__header">
+        <div>
+          <p class="section-card__eyebrow">Отправка ответа</p>
+          <h2 class="modal__title" id="response-success-title">Ответ отправлен!</h2>
+        </div>
+        <a class="modal__close" href="#details-panel" aria-label="Закрыть окно успеха">Закрыть</a>
+      </div>
+      <div class="modal__content">
+        <section class="response-card response-card--success">
+          <p class="response-card__text">Ваш ответ успешно отправлен гражданину и сохранён в истории.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

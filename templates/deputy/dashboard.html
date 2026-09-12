@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Кабинет депутата для управления обращениями граждан округа.">
+  <title>Портал обращений депутатам — Кабинет депутата</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="dashboard-page">
+  <!-- CSS-only вкладки кабинета депутата -->
+  <input class="state-toggle" type="radio" name="deputy-view" id="deputy-view-appeals" checked>
+  <input class="state-toggle" type="radio" name="deputy-view" id="deputy-view-statistics">
+  
+  <div class="dashboard-shell deputy-dashboard">
+    <header class="dashboard-header">
+      <div class="dashboard-header__brand">
+        <div class="dashboard-header__logo" aria-hidden="true">📍</div>
+        <div>
+          <p class="dashboard-header__eyebrow">Портал обращений</p>
+          <p class="dashboard-header__title">Кабинет депутата</p>
+        </div>
+      </div>
+
+      <nav class="dashboard-nav" aria-label="Навигация по кабинету">
+        <label class="dashboard-nav__link" for="deputy-view-appeals">Обращения</label>
+        <label class="dashboard-nav__link" for="deputy-view-statistics">Статистика</label>
+      </nav>
+
+      <div class="dashboard-header__profile">
+        <div class="dashboard-header__user">
+          <div class="dashboard-header__avatar" aria-hidden="true">ИО</div>
+          <div>
+            <p class="dashboard-header__name">ИМЯ ОТЧЕСТВО</p>
+            <p class="dashboard-header__role">Депутат</p>
+          </div>
+        </div>
+        <a class="button button--secondary button--compact" href="../public/auth.html">Выйти</a>
+      </div>
+    </header>
+
+    <main class="dashboard-main">
+      <section class="dashboard-view dashboard-view--appeals" id="appeals-panel" aria-labelledby="appeals-title">
+        <div class="dashboard-hero">
+          <div>
+            <p class="section-card__eyebrow">Кабинет депутата</p>
+            <h1 class="dashboard-hero__title" id="appeals-title">Управление обращениями</h1>
+            <p class="dashboard-hero__text">Обрабатывайте обращения граждан вашего округа, меняйте статусы и отправляйте ответы.</p>
+          </div>
+          <div class="dashboard-hero__status">
+            <span class="dashboard-hero__status-dot" aria-hidden="true"></span>
+            <span>СДЕЛАТЬ ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ СТАТУСА С ДАТОЙ И ВРЕМЕНЕМ</span>
+          </div>
+        </div>
+
+        <section class="summary-grid" aria-label="Краткая сводка по обращениям">
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Всего обращений</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Новые</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">В работе</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Выполнено</p>
+          </article>
+        </section>
+
+        <section class="appeals-table-section" aria-label="Таблица обращений">
+          <div class="table-wrapper">
+            <table class="appeals-table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Категория</th>
+                  <th scope="col">Описание</th>
+                  <th scope="col">Адрес</th>
+                  <th scope="col">Дата</th>
+                  <th scope="col">Статус</th>
+                  <th scope="col">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>#12345</td>
+                  <td>Дороги и тротуары</td>
+                  <td>Разбитая дорога на улице...</td>
+                  <td>ул. Примерная, д. 1</td>
+                  <td>01.01.2025</td>
+                  <td><span class="appeal-card__status appeal-card__status--progress">В работе</span></td>
+                  <td><a class="text-link text-link--strong" href="appeal_detail.html">Подробнее</a></td>
+                </tr>
+                <tr>
+                  <td>#12346</td>
+                  <td>ЖКХ</td>
+                  <td>Проблема с отоплением...</td>
+                  <td>ул. Примерная, д. 2</td>
+                  <td>02.01.2025</td>
+                  <td><span class="appeal-card__status appeal-card__status--new">Новое</span></td>
+                  <td><a class="text-link text-link--strong" href="appeal_detail.html">Подробнее</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="empty-state" aria-labelledby="empty-state-title">
+          <div class="empty-state__illustration" aria-hidden="true">
+            <span class="empty-state__ring"></span>
+            <span class="empty-state__dot"></span>
+          </div>
+          <div class="empty-state__content">
+            <h2 class="empty-state__title" id="empty-state-title">У ВАС НЕТ ОБРАЩЕНИЙ</h2>
+            <p class="empty-state__text">На данный момент нет обращений, требующих вашего внимания.</p>
+          </div>
+        </aside>
+
+        <aside class="quick-links-card">
+          <p class="submission-card__eyebrow">Быстрые переходы</p>
+          <div class="quick-links-list">
+            <a class="text-link text-link--strong" href="statistics.html">📊 Статистика округа</a>
+            <a class="text-link text-link--strong" href="#profile">👤 Мой профиль</a>
+          </div>
+        </aside>
+      </section>
+
+      <section class="dashboard-view dashboard-view--statistics" id="statistics-panel" aria-labelledby="statistics-title">
+        <div class="dashboard-hero">
+          <div>
+            <p class="section-card__eyebrow">Аналитика</p>
+            <h1 class="dashboard-hero__title" id="statistics-title">Статистика округа</h1>
+            <p class="dashboard-hero__text">Отслеживайте динамику обращений и эффективность работы.</p>
+          </div>
+        </div>
+
+        <section class="summary-grid" aria-label="Основные показатели">
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Всего обращений</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Решено проблем</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Среднее время решения</p>
+          </article>
+          <article class="summary-card">
+            <p class="summary-card__value">ТЕСТОВОЕ ЧИСЛО</p>
+            <p class="summary-card__label">Удовлетворённость</p>
+          </article>
+        </section>
+
+        <section class="charts-grid" aria-label="Графики и диаграммы">
+          <article class="chart-card">
+            <p class="submission-card__eyebrow">Динамика обращений</p>
+            <div class="chart-placeholder chart-placeholder--bar" role="img" aria-label="Гистограмма динамики обращений">
+              <span class="chart-placeholder__bar" style="height: 40%"></span>
+              <span class="chart-placeholder__bar" style="height: 65%"></span>
+              <span class="chart-placeholder__bar" style="height: 50%"></span>
+              <span class="chart-placeholder__bar" style="height: 80%"></span>
+              <span class="chart-placeholder__bar" style="height: 60%"></span>
+            </div>
+          </article>
+
+          <article class="chart-card">
+            <p class="submission-card__eyebrow">По категориям</p>
+            <div class="chart-placeholder chart-placeholder--bars-horizontal" role="img" aria-label="Горизонтальная гистограмма по категориям">
+              <div class="chart-placeholder__bar-row">
+                <span class="chart-placeholder__bar-label">ЖКХ</span>
+                <span class="chart-placeholder__bar-fill" style="width: 70%"></span>
+              </div>
+              <div class="chart-placeholder__bar-row">
+                <span class="chart-placeholder__bar-label">Дороги</span>
+                <span class="chart-placeholder__bar-fill" style="width: 50%"></span>
+              </div>
+              <div class="chart-placeholder__bar-row">
+                <span class="chart-placeholder__bar-label">Благоустройство</span>
+                <span class="chart-placeholder__bar-fill" style="width: 35%"></span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <aside class="quick-links-card">
+          <p class="submission-card__eyebrow">Действия</p>
+          <div class="quick-links-list">
+            <a class="text-link text-link--strong" href="dashboard.html">← К обращениям</a>
+            <a class="text-link text-link--strong" href="#export">📥 Экспорт данных</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <!-- CSS-only модальное окно деталей обращения -->
+  <section class="modal" id="appeal-detail" aria-labelledby="appeal-detail-title">
+    <div class="modal__dialog">
+      <div class="modal__header">
+        <div>
+          <p class="section-card__eyebrow">Детали обращения</p>
+          <h2 class="modal__title" id="appeal-detail-title">Разбитая дорога на улице</h2>
+          <p class="modal__subtitle">01.01.2025 · #12345</p>
+        </div>
+        <a class="modal__close" href="#appeals-panel" aria-label="Закрыть окно с деталями обращения">Закрыть</a>
+      </div>
+
+      <div class="modal__meta">
+        <span class="appeal-card__badge appeal-card__badge--roads">Дороги и тротуары</span>
+        <span class="appeal-card__status appeal-card__status--progress">В работе</span>
+      </div>
+
+      <div class="modal__content">
+        <section class="modal__section">
+          <h3 class="modal__section-title">Описание проблемы</h3>
+          <p class="modal__text">ТЕСТОВОЕ ОПИСАНИЕ ПРОБЛЕМЫ</p>
+        </section>
+
+        <section class="modal__section modal__section--split">
+          <div>
+            <h3 class="modal__section-title">Адрес</h3>
+            <p class="modal__text">ул. Примерная, д. 1</p>
+            <a class="text-link text-link--strong" href="https://yandex.ru/maps/" target="_blank" rel="noopener noreferrer">Открыть карту</a>
+          </div>
+          <div class="map-placeholder" role="img" aria-label="Статичная карта с адресом обращения"></div>
+        </section>
+
+        <section class="response-card">
+          <p class="response-card__eyebrow">Ответ депутата</p>
+          <p class="response-card__text">ТЕСТОВЫЙ ОТВЕТ ДЕПУТАТА</p>
+          <p class="response-card__meta">ТЕСТОВАЯ ДАТА · ТЕСТОВЫЙ ДЕПУТАТ</p>
+        </section>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
