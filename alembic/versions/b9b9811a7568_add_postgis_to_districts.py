@@ -14,7 +14,7 @@ from geoalchemy2 import Geometry
 
 # revision identifiers, used by Alembic.
 revision: str = 'b9b9811a7568'
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = '6e412dc81dd8'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
