@@ -23,6 +23,7 @@ SessionLocal = sessionmaker(bind=engine)
 
 # импортируем модели
 from app.db import models  # noqa: E402
+from app.core.security import hash_password
 
 
 STATUSES = [
@@ -68,7 +69,7 @@ def seed_categories(db):
 
 
 def seed_admin(db):
-    email = "admin@test.local"
+    email = "admin@example.com"
     exists = db.query(models.User).filter(
         models.User.email == email
     ).first()
@@ -77,7 +78,7 @@ def seed_admin(db):
             first_name="Тестовый",
             last_name="Админ",
             email=email,
-            password_hash="admin123",  # блок 1 заменит на хеш
+            password_hash=hash_password("admin123"),
             role="admin",
         )
         db.add(admin)
