@@ -89,12 +89,64 @@ def seed_admin(db):
         print(f"✓ Тестовый админ уже есть: {email} | id={exists.id}")
 
 
+# Тестовые округа Калуги: два прямоугольника, закрывающие центр города.
+# Координаты GeoJSON: [долгота, широта], контур замкнут.
+DISTRICTS = [
+    (
+        "Октябрьский округ",
+        "Западная часть города (тестовый полигон)",
+        {
+            "type": "Polygon",
+            "coordinates": [[
+                [36.2000, 54.4700],
+                [36.2700, 54.4700],
+                [36.2700, 54.5600],
+                [36.2000, 54.5600],
+                [36.2000, 54.4700],
+            ]],
+        },
+    ),
+    (
+        "Ленинский округ",
+        "Восточная часть города (тестовый полигон)",
+        {
+            "type": "Polygon",
+            "coordinates": [[
+                [36.2700, 54.4700],
+                [36.3400, 54.4700],
+                [36.3400, 54.5600],
+                [36.2700, 54.5600],
+                [36.2700, 54.4700],
+            ]],
+        },
+    ),
+]
+
+
+def seed_districts(db):
+    added = 0
+    for name, description, geometry in DISTRICTS:
+        exists = db.query(models.District).filter(
+            models.District.name == name
+        ).first()
+        if not exists:
+            db.add(models.District(
+                name=name,
+                description=description,
+                geom=models.District.from_geojson(geometry),
+            ))
+            added += 1
+    db.commit()
+    print(f"✓ Округа: добавлено {added} (уже было {len(DISTRICTS) - added})")
+
+
 def main():
     db = SessionLocal()
     try:
         print("→ Наполняю БД начальными данными...\n")
         seed_statuses(db)
         seed_categories(db)
+        seed_districts(db)
         seed_admin(db)
         print("\n✓ Готово. Запускай сервер: uvicorn app.main:app --reload")
     finally:
