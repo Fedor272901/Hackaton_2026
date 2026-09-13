@@ -61,10 +61,11 @@ Frontend           FastAPI :8000
 
 Требуется Docker и Docker Compose.
 
-git clone [git@github.com](mailto:git@github.com):Fedor272901/Hackaton_2026.git
+```bash
+git clone git@github.com:Fedor272901/Hackaton_2026.git
 cd Hackaton_2026
 docker compose up -d --build
-
+```
 После запуска:
 
 * приложение: [http://localhost/](http://localhost/)
@@ -78,8 +79,10 @@ docker compose up -d --build
 
 ### Тестовый пользователь
 
-Email: [admin@example.com](mailto:admin@example.com)
+```
+Email: admin@example.com
 Password: admin123
+```
 
 ## Структура проекта
 
